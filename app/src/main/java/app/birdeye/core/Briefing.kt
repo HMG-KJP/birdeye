@@ -1,8 +1,9 @@
 package app.birdeye.core
 
 /**
- * The short summary beside the map. It only repeats what was heard or read from the car, says so when
- * it cannot hear, and never guesses what other drivers intend or tells the driver what to do.
+ * The short summary beside the map. It repeats what was heard or read from the car and says so when it
+ * cannot hear. About other drivers it offers only a possible reason, because deaf drivers report taking
+ * other cars' movement for an emergency vehicle; it never states what they intend.
  */
 object Briefing {
     private const val MAX_LINES = 3
@@ -17,7 +18,7 @@ object Briefing {
             lines += "주변 차가 움직이면 이 소리 때문일 수 있어요"
         } else {
             surroundings(state, hour)?.let { lines += it }
-            lines += lastSound(state, timeText)
+            lastSound(state, timeText)?.let { lines += it }
         }
         return lines.take(MAX_LINES)
     }
@@ -35,9 +36,13 @@ object Briefing {
         }
     }
 
-    private fun lastSound(state: UiState, timeText: (Long) -> String): String {
+    /** Sounds are only recorded during a trip, so before one starts nothing can be said about them. */
+    private fun lastSound(state: UiState, timeText: (Long) -> String): String? {
         val last = state.trip.entries.lastOrNull { it.kind == EntryKind.SIREN || it.kind == EntryKind.HORN }
-            ?: return "이번 운행에서 들린 사이렌과 경적은 없어요"
-        return "마지막 소리는 ${timeText(last.at)}, ${last.text}"
+        return when {
+            last != null -> "마지막 소리는 ${timeText(last.at)}, ${last.text}"
+            state.trip.active -> "이번 운행에서 들린 사이렌과 경적은 없어요"
+            else -> null
+        }
     }
 }

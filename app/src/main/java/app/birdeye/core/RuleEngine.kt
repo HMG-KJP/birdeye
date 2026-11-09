@@ -566,8 +566,8 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             firedAt = event.at,
         )
         val s = logActiveSound(state, effects)
-            .copy(activeSound = null, activeTraffic = warning, trafficUntil = until)
-            .withUi { copy(alert = alert) }
+            .copy(activeSound = null, activeTraffic = warning, trafficUntil = until, alsoHeardUntil = null)
+            .withUi { copy(alert = alert, alsoHeard = null) }
         return log(s, EntryKind.TRAFFIC, event.at, Copy.trafficLog(event.kind, event.side), effects)
     }
 

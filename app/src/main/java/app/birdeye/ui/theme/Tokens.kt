@@ -260,6 +260,10 @@ object Tokens {
 
     /** How much of a wide window the map pane takes, so it fits every display's window. */
     const val SIDE_PANE_SHARE = 0.42f
+    const val SIDE_PANE_SHARE_COMPACT = 0.34f
+
+    /** Below this window height the cards tighten up. Connect-S 17 and W-Extended stay above it. */
+    const val COMPACT_WINDOW_HEIGHT = 900
     const val ICON_STROKE = 2f
 
     /**

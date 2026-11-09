@@ -12,6 +12,7 @@ import app.birdeye.core.Screen
 import app.birdeye.core.UiState
 import app.birdeye.ui.component.BasicButton
 import app.birdeye.ui.component.LineIcons
+import app.birdeye.ui.component.LocalCompactCards
 import app.birdeye.ui.component.LocalSystemCameraHeight
 import app.birdeye.ui.component.TabItem
 import app.birdeye.ui.component.Toast
@@ -61,7 +62,8 @@ fun AppRoot(state: UiState, actions: UiActions, formFactor: FormFactor = FormFac
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val onePane = maxHeight > maxWidth
             val camera = if (state.systemCameraUp) maxHeight * Tokens.SYSTEM_CAMERA_HEIGHT_RATIO else 0.dp
-            CompositionLocalProvider(LocalSystemCameraHeight provides camera) {
+            val compact = camera > 0.dp || maxHeight < Tokens.COMPACT_WINDOW_HEIGHT.dp
+            CompositionLocalProvider(LocalSystemCameraHeight provides camera, LocalCompactCards provides compact) {
                 when {
                     state.alert != null -> MainScreen(state, onePane, actions)
                     state.screen == Screen.TALK -> TalkScreen(state, onePane, draft, actions)

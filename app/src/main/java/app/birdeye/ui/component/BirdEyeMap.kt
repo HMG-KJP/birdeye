@@ -63,6 +63,7 @@ private const val SECTOR = 0.367f
 private const val CAR_HEIGHT = 0.44f
 private const val CAR_ASPECT = 270f / 617f
 private const val SPREAD_DEGREES = 40f
+private const val MIN_SIDE = 320
 
 private fun Direction.centerDegrees() = when (this) {
     Direction.RIGHT -> 0f
@@ -94,6 +95,8 @@ fun BirdEyeMap(
     val car = if (colors.background == Tokens.dark.background) R.drawable.car_top_dark else R.drawable.car_top_light
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
+        // Too small to read its labels, the map would only add clutter to a window short on room.
+        if (side < MIN_SIDE.fdp) return@BoxWithConstraints
         Box(Modifier.size(side), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val ringColor = colors.dividerStrong
@@ -181,32 +184,33 @@ private fun DrawScope.drawOnCar(seat: Seat?, windowOpen: Boolean, colors: ColorT
 private fun SideLabels(sounds: List<MapSound>) {
     val colors = LocalColors.current
     val style = Tokens.bodySmall.withWeight(FontWeight.Bold)
-    fun heard(direction: Direction) = sounds.firstOrNull { it.side == direction }
-    val unknown = sounds.firstOrNull { it.side == null }
+    fun heard(direction: Direction) = sounds.filter { it.side == direction }.takeIf { it.isNotEmpty() }
+    fun names(on: List<MapSound>) = on.joinToString(" · ") { it.name }
+    val unknown = sounds.filter { it.side == null }.takeIf { it.isNotEmpty() }
     @Composable
     fun Line(text: String, color: Color) = Label(text, style, color, maxLines = 1)
     Box(Modifier.fillMaxSize()) {
         val front = heard(Direction.FRONT)
         Box(Modifier.align(Alignment.TopCenter)) {
-            Line(if (front != null) "앞 · ${front.name}" else "앞", front?.color ?: colors.textTertiary)
+            Line(if (front != null) "앞 · ${names(front)}" else "앞", front?.first()?.color ?: colors.textTertiary)
         }
         val rear = heard(Direction.REAR)
         Box(Modifier.align(Alignment.BottomCenter)) {
             when {
-                rear != null -> Line("뒤 · ${rear.name}", rear.color)
-                unknown != null -> Line("${unknown.name} · ${Copy.UNKNOWN_SIDE}", unknown.color)
+                rear != null -> Line("뒤 · ${names(rear)}", rear.first().color)
+                unknown != null -> Line("${names(unknown)} · ${Copy.UNKNOWN_SIDE}", unknown.first().color)
                 else -> Line("뒤", colors.textTertiary)
             }
         }
         val left = heard(Direction.LEFT)
         Column(Modifier.align(Alignment.CenterStart), horizontalAlignment = Alignment.CenterHorizontally) {
-            Line("왼쪽", left?.color ?: colors.textTertiary)
-            if (left != null) Line(left.name, left.color)
+            Line("왼쪽", left?.first()?.color ?: colors.textTertiary)
+            left?.forEach { Line(it.name, it.color) }
         }
         val right = heard(Direction.RIGHT)
         Column(Modifier.align(Alignment.CenterEnd), horizontalAlignment = Alignment.CenterHorizontally) {
-            Line("오른쪽", right?.color ?: colors.textTertiary)
-            if (right != null) Line(right.name, right.color)
+            Line("오른쪽", right?.first()?.color ?: colors.textTertiary)
+            right?.forEach { Line(it.name, it.color) }
         }
     }
 }

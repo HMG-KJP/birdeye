@@ -123,6 +123,7 @@ class AppContainer(private val context: Context) {
     private var demoJob: Job? = null
     private var started = false
     private val appVisible = MutableStateFlow(false)
+    private var serviceRequested = false
     private val notifier by lazy { AlertNotifier(context) }
 
     @Volatile
@@ -149,6 +150,7 @@ class AppContainer(private val context: Context) {
         bus.post(AppEvent.SetReplies(settings.replies, clock()))
         uxSource.start(bus::post)
         watchForHiddenAlerts()
+        watchListeningStatus()
         if (BuildConfig.DEBUG) {
             logScreenChanges()
             listenForDebugMicFeed()
@@ -175,6 +177,7 @@ class AppContainer(private val context: Context) {
     }
 
     fun playDemo(scene: DemoScene) {
+        setDemoMode(true)
         stopRealSources()
         demoJob?.cancel()
         bus.post(AppEvent.Reset(clock()))
@@ -198,9 +201,28 @@ class AppContainer(private val context: Context) {
     private fun startListeningService() {
         if (settings.demoMode || !appVisible.value || !granted(Manifest.permission.RECORD_AUDIO)) return
         try {
-            context.startForegroundService(Intent(context, ListeningService::class.java))
-        } catch (e: IllegalStateException) {
+            ListeningService.start(context)
+            serviceRequested = true
+        } catch (e: RuntimeException) {
             Log.w(TAG, "could not keep listening in the background", e)
+        }
+    }
+
+    private fun stopListeningService() {
+        if (!serviceRequested) return
+        serviceRequested = false
+        try {
+            ListeningService.stop(context)
+        } catch (e: RuntimeException) {
+            context.stopService(Intent(context, ListeningService::class.java))
+        }
+    }
+
+    private fun watchListeningStatus() {
+        scope.launch {
+            appState.state.map { it.listening }.distinctUntilChanged().collect { status ->
+                if (serviceRequested) notifier.updateListening(status)
+            }
         }
     }
 
@@ -292,7 +314,7 @@ class AppContainer(private val context: Context) {
     }
 
     private fun stopRealSources() {
-        context.stopService(Intent(context, ListeningService::class.java))
+        stopListeningService()
         trafficSource.stop()
         vehicleSource?.stop()
         vehicleSource = null

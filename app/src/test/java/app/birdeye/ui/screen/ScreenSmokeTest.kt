@@ -356,6 +356,22 @@ class ScreenSmokeTest {
     }
 
     @Test
+    fun `two sounds of unknown direction are both named on the map`() {
+        val horn = sirenAlert.copy(kind = AlertKind.HORN, headline = "경적이 울렸어요", direction = null)
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert.copy(direction = null), alsoHeard = horn))
+
+        compose.onNodeWithText("사이렌 · 경적 · 방향 모름").assertIsDisplayed()
+    }
+
+    @Test
+    fun `two sounds on one side are both named on the map`() {
+        val horn = sirenAlert.copy(kind = AlertKind.HORN, headline = "뒤쪽에서 경적이 울렸어요")
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert, alsoHeard = horn))
+
+        compose.onNodeWithText("뒤 · 사이렌 · 경적").assertIsDisplayed()
+    }
+
+    @Test
     fun `a direction nobody knows is shown as unknown on the map`() {
         show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert.copy(direction = null)))
 

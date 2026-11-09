@@ -26,7 +26,7 @@ object Copy {
     const val IDLE_DETAIL = "소리가 들리면 바로 알려 드릴게요"
     const val MUFFLED_IDLE = "소리를 놓칠 수 있어요"
     const val MUFFLED_IDLE_DETAIL = "사이렌과 경적이 작게 들릴 수 있으니 주변을 더 살펴 주세요"
-    const val CAPTIONS_HELD = "회전 중이라 자막을 잠시 줄였어요"
+    const val CAPTIONS_HELD = "방향지시등이 켜져 있어 자막을 잠시 줄였어요"
     const val CAPTIONS_HELD_DETAIL = "사이렌과 경적은 그대로 바로 알려 드려요"
 
     private fun sideName(side: Direction) = when (side) {
@@ -70,7 +70,7 @@ object Copy {
         else -> null
     }
 
-    /** Says what was heard. It names no vehicle and gives no orders: a wrong guess here could mislead. */
+    /** Says what was heard and asks only for a look around: naming a vehicle or a maneuver could mislead. */
     fun soundEyebrow(kind: SoundKind, direction: Direction?): String {
         val base = when (kind) {
             SoundKind.SIREN -> "사이렌 감지"

@@ -24,10 +24,17 @@ class BriefingTest {
     }
 
     @Test
+    fun `before a trip starts nothing is logged, so it does not claim nothing was heard`() {
+        val state = UiState(listening = Listening.ACTIVE, trip = TripSummary(active = false))
+
+        assertEquals(listOf("소리는 잘 듣고 있어요"), lines(state))
+    }
+
+    @Test
     fun `talk entries are not called sounds heard outside`() {
         val state = UiState(
             listening = Listening.ACTIVE,
-            trip = TripSummary(entries = listOf(TripEntry(EntryKind.TALK, 1, "승객: 안녕", null))),
+            trip = TripSummary(active = true, entries = listOf(TripEntry(EntryKind.TALK, 1, "승객: 안녕", null))),
         )
 
         assertEquals(listOf("소리는 잘 듣고 있어요", "이번 운행에서 들린 사이렌과 경적은 없어요"), lines(state))

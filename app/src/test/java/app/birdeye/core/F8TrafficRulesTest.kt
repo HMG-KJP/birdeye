@@ -80,4 +80,15 @@ class F8TrafficRulesTest {
         assertNull(h.ui.alert)
         assertTrue(h.lightEffects().isEmpty())
     }
+
+    @Test
+    fun `a traffic warning takes over from a horn shown beside a siren`() {
+        val h = driving()
+            .frames(SoundKind.SIREN, from = 0, count = 12)
+            .frames(SoundKind.HORN, from = 2000, direction = Direction.LEFT)
+            .send(AppEvent.TrafficWarning(TrafficKind.CUT_IN, Direction.LEFT, at = 3000))
+
+        assertEquals(AlertKind.TRAFFIC, h.ui.alert?.kind)
+        assertNull(h.ui.alsoHeard)
+    }
 }

@@ -15,6 +15,11 @@ class F2F3TalkRulesTest {
     }
 
     @Test
+    fun `the note says what the car knows, a signal on, not that the driver is turning`() {
+        assertEquals("방향지시등이 켜져 있어 자막을 잠시 줄였어요", Copy.CAPTIONS_HELD)
+    }
+
+    @Test
     fun `a signal forgotten on does not hide captions for the rest of the trip`() {
         val h = EngineHarness().gear(GearPos.D).send(AppEvent.TurnSignal(SignalState.LEFT, at = 1000))
         h.tick(21_000)

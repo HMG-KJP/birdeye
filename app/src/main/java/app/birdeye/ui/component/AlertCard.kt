@@ -41,8 +41,8 @@ private fun SoundCard(
 ) {
     val shape = RoundedCornerShape(32.fdp)
     val stackedBelow = 680.fdp
-    // Below the system's camera window the space is short, and the caption must still fit.
-    val verticalPadding = if (LocalSystemCameraHeight.current > 0.dp) 24.fdp else 40.fdp
+    // With little height to spare, the caption below must still fit.
+    val verticalPadding = if (LocalCompactCards.current) 24.fdp else 40.fdp
     BoxWithConstraints(
         modifier
             .background(LocalColors.current.surface, shape)
@@ -69,7 +69,7 @@ private fun SoundCard(
 
 @Composable
 private fun SoundIcon(paths: List<String>, tint: Color, background: Color, description: String?) {
-    val compact = LocalSystemCameraHeight.current > 0.dp
+    val compact = LocalCompactCards.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier.size(if (compact) 96.fdp else 152.fdp).background(background, CircleShape),

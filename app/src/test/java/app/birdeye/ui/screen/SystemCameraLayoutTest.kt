@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.height
 import app.birdeye.core.CaptionLine
 import app.birdeye.core.DrivingCondition
 import app.birdeye.core.GearPos
+import app.birdeye.core.Listening
 import app.birdeye.core.Screen
 import app.birdeye.core.SignalState
 import app.birdeye.core.Speaker
@@ -50,7 +51,54 @@ class SystemCameraLayoutTest {
     private fun assertBelowCamera(text: String) =
         assertTrue("$text starts at ${bounds(text).top}", bounds(text).top >= CAMERA_BOTTOM)
 
-    /** A column squeezes what no longer fits, so the bottom edge alone would never fail. */
+    private val alertWithCaption = line("구급차 지나가면 천천히 가자").let {
+        UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert, recentCaption = it, captions = listOf(it))
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h810dp-port-mdpi")
+    fun `the briefing still fits in the shortest narrow window when a caption is up`() {
+        show(alertWithCaption, FormFactor.W)
+
+        assertInsideWindow("지금 브리핑", 810.dp)
+    }
+
+    @Test
+    @Config(qualifiers = "w628dp-h855dp-port-mdpi")
+    fun `the briefing still fits in the smallest portrait window`() {
+        show(alertWithCaption, FormFactor.L)
+
+        assertInsideWindow("지금 브리핑", 855.dp)
+    }
+
+    @Test
+    @Config(qualifiers = "w1256dp-h800dp-land-mdpi")
+    fun `the smallest wide window keeps the alert and caption, and gives up the rest rather than clip it`() {
+        show(alertWithCaption, FormFactor.WF)
+
+        assertInsideWindow("주변을 확인해 주세요", 800.dp)
+        assertInsideWindow("구급차 지나가면 천천히 가자", 800.dp)
+        compose.onNodeWithText("최근 소리").assertDoesNotExist()
+    }
+
+    @Test
+    @Config(qualifiers = "w1256dp-h800dp-land-mdpi")
+    fun `the smallest wide window has room for the briefing when no caption is up`() {
+        show(alertWithCaption.copy(recentCaption = null), FormFactor.WF)
+
+        assertInsideWindow("지금 브리핑", 800.dp)
+    }
+
+    @Test
+    @Config(qualifiers = "w1700dp-h1184dp-land-mdpi")
+    fun `the largest window shows the alert, caption, briefing and recent sounds together`() {
+        show(alertWithCaption)
+
+        listOf("주변을 확인해 주세요", "구급차 지나가면 천천히 가자", "지금 브리핑", "최근 소리").forEach {
+            assertInsideWindow(it, 1184.dp)
+        }
+    }
+
     private fun assertInsideWindow(text: String, height: Dp) {
         val box = bounds(text)
         assertTrue("$text ends at ${box.bottom}", box.bottom <= height)
@@ -217,4 +265,5 @@ class PortraitSystemCameraLayoutTest {
         val tab = compose.onNodeWithText("기록").getBoundsInRoot()
         assertTrue("tab starts at ${tab.top}", tab.top >= CAMERA_BOTTOM)
     }
+
 }

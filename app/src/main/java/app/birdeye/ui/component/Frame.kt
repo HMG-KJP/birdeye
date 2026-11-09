@@ -87,6 +87,9 @@ fun bandStyle(state: UiState): BandStyle? {
 /** How far down the system's blind spot camera reaches over this window; zero while it is closed. */
 val LocalSystemCameraHeight = staticCompositionLocalOf { 0.dp }
 
+/** A short window or an open camera leaves little height, so cards tighten up and the map gives way. */
+val LocalCompactCards = staticCompositionLocalOf { false }
+
 /** Keeps the cards under the camera while the page's tabs stay in view beside it. */
 private val LocalNavigationMinHeight = staticCompositionLocalOf { 0.dp }
 
@@ -98,7 +101,7 @@ private val LocalNavigationMinHeight = staticCompositionLocalOf { 0.dp }
 fun TwoPaneFrame(
     band: BandStyle?,
     side: @Composable ColumnScope.() -> Unit,
-    sideShare: Float = Tokens.SIDE_PANE_SHARE,
+    sideShare: Float = if (LocalCompactCards.current) Tokens.SIDE_PANE_SHARE_COMPACT else Tokens.SIDE_PANE_SHARE,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalColors.current

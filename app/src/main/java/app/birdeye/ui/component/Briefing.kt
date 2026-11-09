@@ -2,8 +2,10 @@ package app.birdeye.ui.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -23,6 +25,8 @@ import app.birdeye.ui.theme.Tokens
 import app.birdeye.ui.theme.fdp
 
 private const val RECENT_SOUNDS = 4
+private const val BRIEFING_MIN_HEIGHT = 226
+private const val RECENT_MIN_HEIGHT = 170
 
 /** A second sound under the main card, so one never hides the other. */
 @Composable
@@ -71,9 +75,25 @@ fun BriefingCard(lines: List<String>) {
     }
 }
 
-/** Fills the rest of the pane with what the driver may have missed, newest first. */
+/**
+ * Fills what is left under the cards. Each part appears only if it fits whole, so nothing is ever
+ * clipped: the alert and caption above always matter more than this.
+ */
 @Composable
-fun RecentSoundsCard(state: UiState, actions: UiActions, modifier: Modifier = Modifier) {
+fun BriefingAndRecent(lines: List<String>, state: UiState, actions: UiActions, modifier: Modifier = Modifier) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val gap = 24.fdp
+        val showBriefing = maxHeight >= BRIEFING_MIN_HEIGHT.fdp
+        val showRecent = maxHeight >= BRIEFING_MIN_HEIGHT.fdp + gap + RECENT_MIN_HEIGHT.fdp
+        Column(verticalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.fillMaxSize()) {
+            if (showBriefing) BriefingCard(lines)
+            if (showRecent) RecentSoundsCard(state, actions, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun RecentSoundsCard(state: UiState, actions: UiActions, modifier: Modifier = Modifier) {
     val colors = LocalColors.current
     val sounds = state.trip.entries
         .filter { it.kind == EntryKind.SIREN || it.kind == EntryKind.HORN }

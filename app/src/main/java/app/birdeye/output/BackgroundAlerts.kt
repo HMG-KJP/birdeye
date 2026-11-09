@@ -54,12 +54,15 @@ class AlertNotifier(private val context: Context) {
             PendingIntent.FLAG_IMMUTABLE,
         )
 
-    fun listening(): Notification = Notification.Builder(context, CHANNEL_LISTENING)
+    fun listening(status: Listening): Notification = Notification.Builder(context, CHANNEL_LISTENING)
         .setSmallIcon(R.drawable.ic_stat_birdeye)
-        .setContentTitle(Copy.listeningSubtitle(Listening.ACTIVE))
+        .setContentTitle(Copy.listeningSubtitle(status))
         .setContentIntent(openApp)
         .setOngoing(true)
         .build()
+
+    /** The ongoing notice must never keep claiming to listen after the microphone has failed. */
+    fun updateListening(status: Listening) = manager.notify(LISTENING_ID, listening(status))
 
     fun show(title: String, text: String?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

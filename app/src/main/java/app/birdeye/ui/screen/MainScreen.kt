@@ -12,6 +12,7 @@ import app.birdeye.ui.component.AlertCard
 import app.birdeye.ui.component.CaptionCard
 import app.birdeye.ui.component.AlsoHeardCard
 import app.birdeye.ui.component.BirdEyeMap
+import app.birdeye.ui.component.BriefingAndRecent
 import app.birdeye.ui.component.BriefingCard
 import app.birdeye.ui.component.CaptionsHeldCard
 import app.birdeye.ui.component.IdleCard
@@ -20,7 +21,6 @@ import app.birdeye.ui.component.LocalSystemCameraHeight
 import app.birdeye.ui.component.MapPane
 import app.birdeye.ui.component.OnePaneFrame
 import app.birdeye.ui.component.PageNavigation
-import app.birdeye.ui.component.RecentSoundsCard
 import app.birdeye.ui.component.SegmentedTabs
 import app.birdeye.ui.component.TwoPaneFrame
 import app.birdeye.ui.component.bandStyle
@@ -79,8 +79,7 @@ fun MainScreen(state: UiState, onePane: Boolean, actions: UiActions) {
         MainNavigation(state, actions)
         cards()
         if (!cameraUp) {
-            BriefingCard(briefing)
-            RecentSoundsCard(state, actions, Modifier.weight(1f))
+            BriefingAndRecent(briefing, state, actions, Modifier.weight(1f))
         }
     }
 }
