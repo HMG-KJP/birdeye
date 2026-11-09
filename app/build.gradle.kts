@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -26,9 +28,26 @@ android {
         noCompress += "tflite"
     }
 
+    // The release key stays outside the repository. Without it, a release build is signed with the
+    // debug key so that anyone can still build a runnable APK.
+    val keystoreProperties = System.getenv("VS_KEYSTORE_PROPERTIES")?.let { path ->
+        Properties().apply { file(path).inputStream().use(::load) }
+    }
+    signingConfigs {
+        if (keystoreProperties != null) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 
