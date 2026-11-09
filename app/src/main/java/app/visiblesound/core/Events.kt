@@ -30,6 +30,9 @@ sealed interface AppEvent {
     /** Weather heard through the microphone, which also makes other sounds harder to hear. */
     data class AmbientNoise(val kind: NoiseKind, val confidence: Float, override val at: Long) : AppEvent
 
+    /** The car saw another vehicle. Only the demo script produces this until the data is opened. */
+    data class TrafficWarning(val kind: TrafficKind, val side: Direction, override val at: Long) : AppEvent
+
     data class Location(val lat: Double, val lng: Double, val label: String?, override val at: Long) : AppEvent
     data class TurnSignalStale(val side: SignalState, override val at: Long) : AppEvent
     /** [interrupted]: something took the car's audio away before the sentence was finished. */
@@ -49,6 +52,7 @@ sealed interface AppEvent {
 
 enum class SoundKind { SIREN, HORN }
 enum class NoiseKind { RAIN, THUNDER, WIND }
+enum class TrafficKind { CUT_IN, BLIND_SPOT }
 enum class FogPosition { FRONT, REAR }
 enum class EmergencyVehicle { AMBULANCE, POLICE, FIRE }
 enum class Direction { FRONT, REAR, LEFT, RIGHT }

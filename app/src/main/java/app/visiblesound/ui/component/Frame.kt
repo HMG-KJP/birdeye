@@ -65,14 +65,14 @@ fun ColorTokens.accent(accent: Accent): Color = when (accent) {
 }
 
 fun LightRhythm.accent(): Accent = when (this) {
-    LightRhythm.SIREN, LightRhythm.HORN -> Accent.SIREN
+    LightRhythm.SIREN, LightRhythm.HORN, LightRhythm.TRAFFIC -> Accent.SIREN
     LightRhythm.PASSENGER -> Accent.TALK
     LightRhythm.OUTSIDE -> Accent.OUTSIDE
     LightRhythm.VEHICLE -> Accent.VEHICLE
 }
 
 fun AlertKind.accent(): Accent = when (this) {
-    AlertKind.SIREN, AlertKind.HORN -> Accent.SIREN
+    AlertKind.SIREN, AlertKind.HORN, AlertKind.TRAFFIC -> Accent.SIREN
     AlertKind.VEHICLE -> Accent.VEHICLE
 }
 

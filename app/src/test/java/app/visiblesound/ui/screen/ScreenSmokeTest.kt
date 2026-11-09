@@ -133,6 +133,31 @@ class ScreenSmokeTest {
     }
 
     @Test
+    fun `a traffic warning shows its message and the side on the car diagram`() {
+        val warning = sirenAlert.copy(
+            kind = AlertKind.TRAFFIC,
+            eyebrow = "주변 차량 경고 · 오른쪽",
+            headline = "오른쪽에서 차가 끼어들어요",
+            guidance = "속도를 줄이고 앞차와 거리를 두세요",
+            rhythm = LightRhythm.TRAFFIC,
+            direction = Direction.RIGHT,
+        )
+        show(UiState(gear = GearPos.D, alert = warning))
+
+        compose.onNodeWithText("오른쪽에서 차가 끼어들어요").assertIsDisplayed()
+        compose.onNodeWithText(Copy.rhythmLegend(LightRhythm.TRAFFIC)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the recap counts traffic warnings`() {
+        val trip = TripSummary(entries = listOf(TripEntry(EntryKind.TRAFFIC, 0, "오른쪽에서 끼어들기", null)))
+        show(UiState(gear = GearPos.P, screen = Screen.RECAP, trip = trip))
+
+        compose.onNodeWithText("주변 차량 경고").assertIsDisplayed()
+        compose.onNodeWithText("오른쪽에서 끼어들기").assertIsDisplayed()
+    }
+
+    @Test
     fun `the condition is on the talk screen too`() {
         show(UiState(gear = GearPos.D, screen = Screen.TALK, captions = listOf(line("저기")), condition = DrivingCondition.THUNDER))
 

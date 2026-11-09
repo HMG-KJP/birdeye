@@ -39,7 +39,7 @@ import app.visiblesound.ui.theme.fdp
 import java.util.Locale
 
 private fun ColorTokens.entryColor(kind: EntryKind): Color = when (kind) {
-    EntryKind.SIREN, EntryKind.HORN -> siren
+    EntryKind.SIREN, EntryKind.HORN, EntryKind.TRAFFIC -> siren
     EntryKind.TALK -> talk
     EntryKind.OUTSIDE -> outside
     EntryKind.VEHICLE -> vehicle
@@ -51,6 +51,7 @@ private fun entryLabel(kind: EntryKind): String = when (kind) {
     EntryKind.TALK -> "승객 대화"
     EntryKind.OUTSIDE -> "창문 너머 대화"
     EntryKind.VEHICLE -> "차량 경고"
+    EntryKind.TRAFFIC -> "주변 차량 경고"
 }
 
 private fun countText(kind: EntryKind, count: Int): String = when (kind) {
@@ -76,7 +77,7 @@ private fun TripTotals(trip: TripSummary, now: Long) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.fdp)) {
             val counts = trip.counts()
-            listOf(EntryKind.SIREN, EntryKind.HORN, EntryKind.TALK, EntryKind.OUTSIDE, EntryKind.VEHICLE).forEach { kind ->
+            listOf(EntryKind.SIREN, EntryKind.TRAFFIC, EntryKind.HORN, EntryKind.TALK, EntryKind.OUTSIDE, EntryKind.VEHICLE).forEach { kind ->
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Label(entryLabel(kind), Tokens.bodySmall, colors.entryColor(kind), maxLines = 1)
                     Label(countText(kind, counts[kind] ?: 0), Tokens.bodySmall.withWeight(FontWeight.Bold), maxLines = 1)

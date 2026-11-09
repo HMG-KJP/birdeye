@@ -11,6 +11,7 @@ import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.Seat
 import app.visiblesound.core.SignalState
 import app.visiblesound.core.SoundKind
+import app.visiblesound.core.TrafficKind
 import app.visiblesound.core.WindowArea
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -64,6 +65,9 @@ object DemoScript {
                 AppEvent.Location(item["lat"].asDouble, item["lng"].asDouble, stringOrNull("label"), at),
             )
             "reply" -> single(AppEvent.Reply(string("text"), at))
+            "traffic" -> single(
+                AppEvent.TrafficWarning(TrafficKind.valueOf(string("kind")), Direction.valueOf(string("side")), at),
+            )
             "wiper" -> single(AppEvent.Wiper(item["on"].asBoolean, at))
             "fogLight" -> single(AppEvent.FogLight(FogPosition.valueOf(string("position")), item["on"].asBoolean, at))
             "noise" -> noiseFrames(item, t, startAt)

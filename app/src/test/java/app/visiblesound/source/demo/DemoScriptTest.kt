@@ -10,6 +10,7 @@ import app.visiblesound.core.LampState
 import app.visiblesound.core.Seat
 import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.SignalState
+import app.visiblesound.core.TrafficKind
 import app.visiblesound.core.SoundKind
 import app.visiblesound.core.WindowArea
 import org.junit.Assert.assertEquals
@@ -126,6 +127,14 @@ class DemoScriptTest {
         )
 
         assertEquals(items.map { it.t }.sorted(), items.map { it.t })
+    }
+
+    @Test
+    fun `traffic warning item`() {
+        assertEquals(
+            AppEvent.TrafficWarning(TrafficKind.CUT_IN, Direction.RIGHT, at = 1),
+            one("""{"t": 1, "type": "traffic", "kind": "CUT_IN", "side": "RIGHT"}""").event,
+        )
     }
 
     @Test

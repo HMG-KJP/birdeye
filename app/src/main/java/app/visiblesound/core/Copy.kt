@@ -21,6 +21,30 @@ object Copy {
     const val MUFFLED_IDLE = "조용한지 확실하지 않아요"
     const val MUFFLED_IDLE_DETAIL = "사이렌과 경적을 놓칠 수 있으니 주변을 더 살펴 주세요"
 
+    private fun sideName(side: Direction) = when (side) {
+        Direction.FRONT -> "앞쪽"
+        Direction.REAR -> "뒤쪽"
+        Direction.LEFT -> "왼쪽"
+        Direction.RIGHT -> "오른쪽"
+    }
+
+    fun trafficEyebrow(side: Direction) = "주변 차량 경고 · ${sideName(side)}"
+
+    fun trafficHeadline(kind: TrafficKind, side: Direction) = when (kind) {
+        TrafficKind.CUT_IN -> "${sideName(side)}에서 차가 끼어들어요"
+        TrafficKind.BLIND_SPOT -> "${sideName(side)} 사각지대에 차가 있어요"
+    }
+
+    fun trafficGuidance(kind: TrafficKind) = when (kind) {
+        TrafficKind.CUT_IN -> "속도를 줄이고 앞차와 거리를 두세요"
+        TrafficKind.BLIND_SPOT -> "차로 변경을 잠깐 미뤄 주세요"
+    }
+
+    fun trafficLog(kind: TrafficKind, side: Direction) = when (kind) {
+        TrafficKind.CUT_IN -> "${sideName(side)}에서 끼어들기"
+        TrafficKind.BLIND_SPOT -> "${sideName(side)} 사각지대에 차량"
+    }
+
     fun conditionText(condition: DrivingCondition): String = when (condition) {
         DrivingCondition.THUNDER -> "천둥이 치고 있어요 · 소리 감지가 약할 수 있어요"
         DrivingCondition.RAIN -> "빗소리가 커요 · 소리 감지가 약할 수 있어요"
@@ -102,6 +126,7 @@ object Copy {
     /** One line explaining a rhythm, shown next to its dots on the main screen. */
     fun rhythmLegend(rhythm: LightRhythm): String = when (rhythm) {
         LightRhythm.SIREN -> "빠른 3회 점멸 = 긴급차량"
+        LightRhythm.TRAFFIC -> "빠른 2회 점멸 = 주변 차량"
         LightRhythm.HORN -> "강한 1회 = 경적"
         LightRhythm.PASSENGER -> "부드러운 1회 = 승객의 말"
         LightRhythm.OUTSIDE -> "부드러운 2회 = 바깥 사람 말"
@@ -111,7 +136,7 @@ object Copy {
     fun rhythmDots(rhythm: LightRhythm): Int = when (rhythm) {
         LightRhythm.SIREN -> 3
         LightRhythm.HORN, LightRhythm.PASSENGER -> 1
-        LightRhythm.OUTSIDE, LightRhythm.VEHICLE -> 2
+        LightRhythm.OUTSIDE, LightRhythm.VEHICLE, LightRhythm.TRAFFIC -> 2
     }
 }
 

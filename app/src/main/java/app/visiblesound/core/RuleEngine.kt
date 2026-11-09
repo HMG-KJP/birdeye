@@ -11,6 +11,7 @@ data class RuleConfig(
     val frameGapMs: Long = 1_500,
     val soundCooldownMs: Long = 10_000,
     val soundClearMs: Long = 4_000,
+    val trafficHoldMs: Long = 5_000,
     val noiseThreshold: Float = 0.3f,
     val noiseFrames: Int = 4,
     val noiseHoldMs: Long = 30_000,
@@ -59,6 +60,8 @@ data class EngineState(
     internal val noticeSource: NoticeSource? = null,
     internal val noticeExpiresAt: Long? = null,
     internal val parkedAt: Long? = null,
+    internal val activeTraffic: Pair<TrafficKind, Direction>? = null,
+    internal val trafficUntil: Long? = null,
     internal val wiperOn: Boolean = false,
     internal val fogLights: Set<FogPosition> = emptySet(),
     internal val noiseStreaks: Map<NoiseKind, Streak> = emptyMap(),
@@ -105,6 +108,11 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         val sound = s.activeSound
         if (sound != null && now - sound.lastHeardAt >= config.soundClearMs) {
             s = logActiveSound(s, effects).copy(activeSound = null).withUi { copy(alert = null) }
+        }
+
+        val trafficUntil = s.trafficUntil
+        if (trafficUntil != null && now >= trafficUntil) {
+            s = s.copy(activeTraffic = null, trafficUntil = null).withUi { copy(alert = null) }
         }
 
         val expires = s.noticeExpiresAt
@@ -179,6 +187,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
                     uxRestricted = state.ui.uxRestricted,
                 ),
             )
+            is AppEvent.TrafficWarning -> onTraffic(state, event, effects)
             is AppEvent.Wiper -> state.copy(wiperOn = event.on)
             is AppEvent.FogLight -> state.copy(
                 fogLights = if (event.on) state.fogLights + event.position else state.fogLights - event.position,
@@ -209,7 +218,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             else -> 1
         }
         val s = state.copy(streaks = state.streaks + (event.kind to EngineState.Streak(count, event.at)))
-        if (!strong) return s
+        if (!strong || s.activeTraffic != null) return s
 
         val active = s.activeSound
         if (active?.kind == event.kind) {
@@ -518,6 +527,30 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
 
     private fun EngineState.clearNoticeFrom(source: EngineState.NoticeSource) =
         if (noticeSource == source) clearNotice() else this
+
+    // F8 ------------------------------------------------------------------------------------------
+
+    private fun onTraffic(state: EngineState, event: AppEvent.TrafficWarning, effects: MutableList<Effect>): EngineState {
+        if (state.ui.gear != GearPos.D) return state
+        val warning = event.kind to event.side
+        val until = event.at + config.trafficHoldMs
+        if (state.activeTraffic == warning) return state.copy(trafficUntil = until)
+
+        effects += Effect.Light(LightRhythm.TRAFFIC)
+        val alert = Alert(
+            kind = AlertKind.TRAFFIC,
+            eyebrow = Copy.trafficEyebrow(event.side),
+            headline = Copy.trafficHeadline(event.kind, event.side),
+            guidance = Copy.trafficGuidance(event.kind),
+            rhythm = LightRhythm.TRAFFIC,
+            direction = event.side,
+            firedAt = event.at,
+        )
+        val s = logActiveSound(state, effects)
+            .copy(activeSound = null, activeTraffic = warning, trafficUntil = until)
+            .withUi { copy(alert = alert) }
+        return log(s, EntryKind.TRAFFIC, event.at, Copy.trafficLog(event.kind, event.side), effects)
+    }
 
     // F7 ------------------------------------------------------------------------------------------
 

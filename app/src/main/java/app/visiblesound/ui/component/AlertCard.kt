@@ -92,6 +92,7 @@ fun AlertCard(alert: Alert, modifier: Modifier = Modifier) {
                     AlertKind.SIREN -> LineIcons.siren
                     AlertKind.HORN -> LineIcons.horn
                     AlertKind.VEHICLE -> LineIcons.warning
+                    AlertKind.TRAFFIC -> LineIcons.car
                 },
                 tint = tint,
                 background = if (isVehicle) colors.surfaceHigh else colors.sirenIconBg,

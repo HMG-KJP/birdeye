@@ -12,6 +12,7 @@ data class LightStep(val brightness: Int, val color: AmbientColor, val durationM
 
 /** The light language: ambient colors are limited, so the rhythm is what tells sounds apart. */
 enum class LightRhythm(val priority: Int) {
+    TRAFFIC(priority = 5),
     SIREN(priority = 4),
     HORN(priority = 3),
     OUTSIDE(priority = 2),
@@ -21,6 +22,9 @@ enum class LightRhythm(val priority: Int) {
     fun steps(): List<LightStep> = when (this) {
         SIREN -> sirenSet() + LightStep(OFF, AmbientColor.WHITE, SET_GAP_MS) + sirenSet()
         HORN -> listOf(LightStep(FULL, AmbientColor.WHITE, 400))
+        TRAFFIC -> List(2) {
+            listOf(LightStep(FULL, AmbientColor.WHITE, 120), LightStep(OFF, AmbientColor.WHITE, 120))
+        }.flatten()
         PASSENGER -> softFade(AmbientColor.CYAN)
         OUTSIDE -> softFade(AmbientColor.BLUE) + softFade(AmbientColor.BLUE)
         VEHICLE -> List(2) {

@@ -27,6 +27,7 @@ import app.visiblesound.source.AudioRecordReader
 import app.visiblesound.source.EventSource
 import app.visiblesound.source.MicArbiter
 import app.visiblesound.source.MicPump
+import app.visiblesound.source.UnavailableTrafficSource
 import app.visiblesound.source.demo.DemoScene
 import app.visiblesound.source.PcmReader
 import app.visiblesound.source.PleosSttEngine
@@ -107,6 +108,7 @@ class AppContainer(private val context: Context) {
     private var vehicleSource: EventSource? = null
     private var locationSource: EventSource? = null
     private val uxSource = UxRestrictionSource(context, clock) { Log.i(TAG, "no driving restriction service: $it") }
+    private val trafficSource = UnavailableTrafficSource()
     private var micJob: Job? = null
     private var demoJob: Job? = null
     private var started = false
@@ -215,6 +217,7 @@ class AppContainer(private val context: Context) {
                 onError = { what, error -> Log.i(TAG, "vehicle: $what: $error") },
             ).also { it.start(bus::post) }
         }
+        trafficSource.start(bus::post)
         if (locationSource == null && granted(LOCATION_PERMISSION)) {
             locationSource = RealLocationSource(FusedLocation(context), clock) { Log.i(TAG, "location: $it") }
                 .also { it.start(bus::post) }
@@ -227,6 +230,7 @@ class AppContainer(private val context: Context) {
     }
 
     private fun stopRealSources() {
+        trafficSource.stop()
         vehicleSource?.stop()
         vehicleSource = null
         locationSource?.stop()

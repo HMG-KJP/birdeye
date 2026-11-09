@@ -1,7 +1,7 @@
 package app.visiblesound.core
 
 enum class Screen { MAIN, TALK, WINDOW, RECAP }
-enum class AlertKind { SIREN, HORN, VEHICLE }
+enum class AlertKind { SIREN, HORN, VEHICLE, TRAFFIC }
 /** What may be hiding sounds or the road right now. It informs; it never alerts. */
 enum class DrivingCondition(val muffles: Boolean) {
     THUNDER(muffles = true),
@@ -11,7 +11,7 @@ enum class DrivingCondition(val muffles: Boolean) {
     WIND(muffles = true),
 }
 
-enum class EntryKind { SIREN, HORN, TALK, VEHICLE, OUTSIDE }
+enum class EntryKind { SIREN, HORN, TALK, VEHICLE, OUTSIDE, TRAFFIC }
 
 /** Whether sounds are really being watched: a deaf driver has no other way to tell. */
 enum class Listening { NOT_STARTED, ACTIVE, NO_PERMISSION, MIC_ERROR, DEMO }
