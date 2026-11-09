@@ -157,7 +157,9 @@ class DesignRulesTest {
     @Test
     fun `no emoji anywhere in the app`() {
         val emoji = Regex("[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}]")
-        val hits = (mainSources() + File("src/main/assets/demo/evening_commute.json"))
+        val scripts = File("src/main/assets/demo").listFiles().orEmpty().toList()
+        assertEquals(2, scripts.size)
+        val hits = (mainSources() + scripts)
             .filter { emoji.containsMatchIn(it.readText()) }
             .map { it.name }
 

@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.visiblesound.core.AppEvent
 import app.visiblesound.settings.SettingsScreen
+import app.visiblesound.source.demo.DemoScene
 import app.visiblesound.ui.screen.AppRoot
 import app.visiblesound.ui.screen.UiActions
 import app.visiblesound.ui.screen.settingsVisible
@@ -60,7 +61,7 @@ class MainActivity : ComponentActivity() {
                         },
                         onPlayDemo = {
                             settingsOpen = false
-                            container.playDemo()
+                            container.playDemo(it)
                         },
                         onSaveReplies = {
                             container.settings.replies = it
@@ -101,7 +102,9 @@ class MainActivity : ComponentActivity() {
         if (!BuildConfig.DEBUG) return
         if (intent.getBooleanExtra(EXTRA_DEMO, false)) {
             container.setDemoMode(true)
-            container.playDemo()
+            container.playDemo(
+                intent.getStringExtra(EXTRA_DEMO_SCENE)?.let(DemoScene::valueOf) ?: DemoScene.WITH_PASSENGER,
+            )
         }
         intent.getStringExtra(EXTRA_MIC_FILE)?.let { container.debugFeedMic(it) }
     }
@@ -116,6 +119,7 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val EXTRA_DEMO = "demo"
+        const val EXTRA_DEMO_SCENE = "demoScene"
         const val EXTRA_MIC_FILE = "micFile"
         val RUNTIME_PERMISSIONS = arrayOf(Manifest.permission.RECORD_AUDIO, "pleos.car.permission.FUSED_LOCATION")
     }

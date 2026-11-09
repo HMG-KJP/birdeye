@@ -1,13 +1,16 @@
 package app.visiblesound.settings
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import app.visiblesound.core.Copy
+import app.visiblesound.source.demo.DemoScene
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -35,22 +38,36 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the script can be started only in demo mode`() {
-        var played = false
+    fun `either script can be started in demo mode`() {
+        val played = mutableListOf<DemoScene>()
         compose.setContent {
-            SettingsScreen(demoMode = true, replies = Copy.DEFAULT_REPLIES, onPlayDemo = { played = true })
+            SettingsScreen(demoMode = true, replies = Copy.DEFAULT_REPLIES, onPlayDemo = { played += it })
         }
 
-        compose.onNodeWithText("대본 재생").performClick()
+        compose.onNodeWithText("혼자 운전 재생").performClick()
+        compose.onNodeWithText("동승자와 함께 재생").performClick()
 
-        assertTrue(played)
+        assertEquals(listOf(DemoScene.ALONE, DemoScene.WITH_PASSENGER), played)
     }
 
     @Test
-    fun `the play button is hidden outside demo mode`() {
+    @Config(qualifiers = "w628dp-h855dp-port-mdpi")
+    fun `in the narrowest window the second play button wraps instead of being cut off`() {
+        compose.setContent { SettingsScreen(demoMode = true, replies = Copy.DEFAULT_REPLIES) }
+
+        val first = compose.onNodeWithText("혼자 운전 재생").getBoundsInRoot()
+        val second = compose.onNodeWithText("동승자와 함께 재생").getBoundsInRoot()
+
+        assertTrue("second button ends at ${second.right}", second.right <= 628.dp)
+        assertTrue("second button starts at ${second.top}", second.top >= first.bottom)
+    }
+
+    @Test
+    fun `the play buttons are hidden outside demo mode`() {
         compose.setContent { SettingsScreen(demoMode = false, replies = Copy.DEFAULT_REPLIES) }
 
-        compose.onNodeWithText("대본 재생").assertDoesNotExist()
+        compose.onNodeWithText("혼자 운전 재생").assertDoesNotExist()
+        compose.onNodeWithText("동승자와 함께 재생").assertDoesNotExist()
     }
 
     @Test

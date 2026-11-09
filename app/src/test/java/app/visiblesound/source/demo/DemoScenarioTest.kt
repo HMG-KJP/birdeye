@@ -19,11 +19,13 @@ import java.io.File
 class DemoScenarioTest {
     private val json = File("src/main/assets/demo/evening_commute.json").readText()
 
-    private fun replay(speaksAloud: Boolean = false): List<UiState> {
+    private val solo = File("src/main/assets/${DemoScene.ALONE.asset}").readText()
+
+    private fun replay(speaksAloud: Boolean = false, script: String = json): List<UiState> {
         val engine = RuleEngine()
         var state = EngineState()
         val timeline = mutableListOf<UiState>()
-        val events = DemoScript.parse(json, startAt = 0)
+        val events = DemoScript.parse(script, startAt = 0)
         var clock = 0L
         val end = events.last().t + 10_000
         var next = 0
@@ -66,19 +68,35 @@ class DemoScenarioTest {
     }
 
     @Test
+    fun `driving alone covers every warning but no conversation`() {
+        val timeline = replay(script = solo)
+        val counts = timeline.last().trip.counts()
+
+        assertEquals(1, counts[EntryKind.SIREN])
+        assertEquals(1, counts[EntryKind.HORN])
+        assertEquals(2, counts[EntryKind.VEHICLE])
+        assertEquals(2, counts[EntryKind.OUTSIDE])
+        assertEquals(0, counts[EntryKind.TALK])
+        assertEquals(GearPos.P, timeline.last().gear)
+        assertTrue(timeline.none { it.screen == Screen.TALK })
+    }
+
+    @Test
     fun `no scripted sentence is mistaken for the car's own voice`() {
-        val logged = replay(speaksAloud = true).last().trip.entries.map { it.text }
-        val scripted = DemoScript.parse(json, 0).mapNotNull {
-            when (val event = it.event) {
-                is AppEvent.Caption -> event.text
-                is AppEvent.Outside -> event.text
-                else -> null
+        listOf(json, solo).forEach { script ->
+            val logged = replay(speaksAloud = true, script = script).last().trip.entries.map { it.text }
+            val scripted = DemoScript.parse(script, 0).mapNotNull {
+                when (val event = it.event) {
+                    is AppEvent.Caption -> event.text
+                    is AppEvent.Outside -> event.text
+                    else -> null
+                }
             }
+
+            val dropped = scripted.filter { sentence -> logged.none { sentence in it } }
+
+            assertTrue("dropped while the car was speaking: $dropped", dropped.isEmpty())
         }
-
-        val dropped = scripted.filter { sentence -> logged.none { sentence in it } }
-
-        assertTrue("dropped while the car was speaking: $dropped", dropped.isEmpty())
     }
 
     @Test

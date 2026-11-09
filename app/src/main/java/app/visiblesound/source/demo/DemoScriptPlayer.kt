@@ -18,6 +18,11 @@ import kotlinx.coroutines.flow.flow
 
 data class TimedEvent(val t: Long, val event: AppEvent)
 
+enum class DemoScene(val asset: String, val label: String) {
+    ALONE("demo/solo_drive.json", "혼자 운전"),
+    WITH_PASSENGER("demo/evening_commute.json", "동승자와 함께"),
+}
+
 object DemoScript {
     private const val FRAME_MS = 500L
     private const val DEFAULT_SOUND_MS = 5_000L

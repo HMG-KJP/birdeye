@@ -27,6 +27,7 @@ import app.visiblesound.source.AudioRecordReader
 import app.visiblesound.source.EventSource
 import app.visiblesound.source.MicArbiter
 import app.visiblesound.source.MicPump
+import app.visiblesound.source.demo.DemoScene
 import app.visiblesound.source.PcmReader
 import app.visiblesound.source.PleosSttEngine
 import app.visiblesound.source.RealLocationSource
@@ -151,11 +152,11 @@ class AppContainer(private val context: Context) {
         }
     }
 
-    fun playDemo() {
+    fun playDemo(scene: DemoScene) {
         stopRealSources()
         demoJob?.cancel()
         bus.post(AppEvent.Reset(clock()))
-        val script = context.assets.open(DEMO_SCRIPT).bufferedReader().use { it.readText() }
+        val script = context.assets.open(scene.asset).bufferedReader().use { it.readText() }
         demoJob = scope.launch {
             DemoScriptPlayer(script, clock).events().collect(bus::post)
         }
@@ -317,7 +318,6 @@ class AppContainer(private val context: Context) {
 
     private companion object {
         const val TAG = "VisibleSound"
-        const val DEMO_SCRIPT = "demo/evening_commute.json"
         const val LOCATION_PERMISSION = "pleos.car.permission.FUSED_LOCATION"
         const val CHUNK_MS = 100L
         const val DEBUG_SCORE_FLOOR = 0.05f

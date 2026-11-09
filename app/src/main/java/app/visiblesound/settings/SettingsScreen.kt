@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +30,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import app.visiblesound.core.Copy
+import app.visiblesound.source.demo.DemoScene
 import app.visiblesound.ui.component.BasicButton
 import app.visiblesound.ui.component.ButtonKind
 import app.visiblesound.ui.component.Label
@@ -57,12 +60,13 @@ class SettingsStore(context: Context) {
 }
 
 /** A Depth page in the guide's terms. It opens only while parked, since it has free text inputs. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     demoMode: Boolean,
     replies: List<String>,
     onDemoMode: (Boolean) -> Unit = {},
-    onPlayDemo: () -> Unit = {},
+    onPlayDemo: (DemoScene) -> Unit = {},
     onSaveReplies: (List<String>) -> Unit = {},
     onClose: () -> Unit = {},
 ) {
@@ -84,9 +88,8 @@ fun SettingsScreen(
             subtitle = null,
             suffix = { BasicButton("닫기", onClose, size = Tokens.buttonSmall, icon = LineIcons.close) },
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(24.fdp),
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.fdp),
             modifier = Modifier
                 .fillMaxWidth()
                 .background(colors.surface, RoundedCornerShape(24.fdp))
@@ -96,7 +99,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(24.fdp),
                 modifier = Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .toggleable(value = demoMode, role = Role.Switch) {
                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                         onDemoMode(it)
@@ -109,7 +112,14 @@ fun SettingsScreen(
                 Switch(demoMode)
             }
             if (demoMode) {
-                BasicButton("대본 재생", onPlayDemo, kind = ButtonKind.ACCENT_TALK)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(14.fdp),
+                    verticalArrangement = Arrangement.spacedBy(14.fdp),
+                ) {
+                    DemoScene.entries.forEach { scene ->
+                        BasicButton("${scene.label} 재생", { onPlayDemo(scene) }, kind = ButtonKind.ACCENT_TALK)
+                    }
+                }
             }
         }
         Column(
