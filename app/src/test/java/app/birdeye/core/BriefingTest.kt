@@ -31,6 +31,17 @@ class BriefingTest {
     }
 
     @Test
+    fun `while a sound is going it never says none has been heard`() {
+        val state = UiState(
+            listening = Listening.ACTIVE,
+            alert = alert(AlertKind.HORN, "왼쪽에서 경적이 울렸어요"),
+            trip = TripSummary(active = true),
+        )
+
+        assertTrue(lines(state).none { it.contains("없어요") })
+    }
+
+    @Test
     fun `talk entries are not called sounds heard outside`() {
         val state = UiState(
             listening = Listening.ACTIVE,

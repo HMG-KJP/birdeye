@@ -107,7 +107,11 @@ private fun RecentSoundsCard(state: UiState, actions: UiActions, modifier: Modif
             .padding(vertical = 24.fdp, horizontal = 32.fdp),
     ) {
         Label("최근 소리", Tokens.titleSmall, maxLines = 1)
-        if (sounds.isEmpty()) Label("아직 들린 사이렌과 경적이 없어요", Tokens.bodySmall, colors.textTertiary, maxLines = 1)
+        // A sound is written down when it ends, so one playing now is not in the list yet.
+        if (sounds.isEmpty()) {
+            val empty = if (state.alert != null) "지금 소리가 끝나면 여기에 남아요" else "아직 들린 사이렌과 경적이 없어요"
+            Label(empty, Tokens.bodySmall, colors.textTertiary, maxLines = 1)
+        }
         sounds.forEach { entry ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.fdp)) {
                 Label(actions.timeText(entry.at), Tokens.labelMedium, colors.textTertiary, maxLines = 1, modifier = Modifier.width(88.fdp))

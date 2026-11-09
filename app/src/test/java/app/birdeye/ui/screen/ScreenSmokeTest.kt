@@ -356,6 +356,14 @@ class ScreenSmokeTest {
     }
 
     @Test
+    fun `the recent list does not deny the sound that is playing right now`() {
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert))
+
+        compose.onNodeWithText("아직 들린 사이렌과 경적이 없어요").assertDoesNotExist()
+        compose.onNodeWithText("지금 소리가 끝나면 여기에 남아요").assertIsDisplayed()
+    }
+
+    @Test
     fun `two sounds of unknown direction are both named on the map`() {
         val horn = sirenAlert.copy(kind = AlertKind.HORN, headline = "경적이 울렸어요", direction = null)
         show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert.copy(direction = null), alsoHeard = horn))

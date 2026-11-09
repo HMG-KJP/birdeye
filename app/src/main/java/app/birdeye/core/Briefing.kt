@@ -41,7 +41,7 @@ object Briefing {
         val last = state.trip.entries.lastOrNull { it.kind == EntryKind.SIREN || it.kind == EntryKind.HORN }
         return when {
             last != null -> "마지막 소리는 ${timeText(last.at)}, ${last.text}"
-            state.trip.active -> "이번 운행에서 들린 사이렌과 경적은 없어요"
+            state.trip.active && state.alert == null -> "이번 운행에서 들린 사이렌과 경적은 없어요"
             else -> null
         }
     }
