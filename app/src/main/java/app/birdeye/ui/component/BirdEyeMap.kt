@@ -92,7 +92,10 @@ fun BirdEyeMap(
     rain: Boolean = false,
 ) {
     val colors = LocalColors.current
-    val car = if (colors.background == Tokens.dark.background) R.drawable.car_top_dark else R.drawable.car_top_light
+    val dark = colors.background == Tokens.dark.background
+    val car = if (dark) R.drawable.car_top_dark else R.drawable.car_top_light
+    // On black the side a sound comes from can carry much more color without glaring.
+    val sectorAlpha = if (dark) 0.36f else 0.16f
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight)
         // Too small to read its labels, the map would only add clutter to a window short on room.
@@ -103,7 +106,7 @@ fun BirdEyeMap(
                 drawCircle(ringColor, size.width * SECTOR, style = Stroke(size.width * 0.004f))
                 drawCircle(ringColor, size.width * RING_INNER, style = Stroke(size.width * 0.004f))
                 if (rain) drawRain(colors.textTertiary)
-                sounds.forEach { drawSound(it) }
+                sounds.forEach { drawSound(it, sectorAlpha) }
             }
             Image(painterResource(car), contentDescription = null, modifier = Modifier.height(side * CAR_HEIGHT).aspectRatio(CAR_ASPECT))
             Canvas(Modifier.fillMaxSize()) { drawOnCar(seat, windowOpen, colors) }
@@ -120,7 +123,7 @@ private fun DrawScope.drawRain(color: Color) {
     }
 }
 
-private fun DrawScope.drawSound(sound: MapSound) {
+private fun DrawScope.drawSound(sound: MapSound, sectorAlpha: Float) {
     val stroke = size.width * 0.022f
     val side = sound.side
     if (side == null) {
@@ -142,7 +145,7 @@ private fun DrawScope.drawSound(sound: MapSound) {
             drawArc(sound.color, start, sweep, useCenter = false, topLeft = topLeft, size = Size(r * 2, r * 2), style = style)
         }
     }
-    arc(SECTOR, style = null, alpha = 0.16f)
+    arc(SECTOR, style = null, alpha = sectorAlpha)
     arc(RING_INNER, Stroke(stroke, cap = StrokeCap.Round))
     if (sound.strong) arc(RING_OUTER, Stroke(stroke, cap = StrokeCap.Round))
 }

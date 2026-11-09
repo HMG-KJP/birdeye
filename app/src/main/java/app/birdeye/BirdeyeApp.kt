@@ -53,6 +53,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -359,6 +361,8 @@ class AppContainer(private val context: Context) {
         }
         val microphone = AudioRecordReader()
         try {
+            // Switching to the demo cancels this job, and its "listening" must not arrive after the demo's.
+            currentCoroutineContext().ensureActive()
             val canHear = classifier != null && (microphone.isReady || BuildConfig.DEBUG)
             bus.post(AppEvent.ListeningChanged(if (canHear) Listening.ACTIVE else Listening.MIC_ERROR, clock()))
             speech.start()
