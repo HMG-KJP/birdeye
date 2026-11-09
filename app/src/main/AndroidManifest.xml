@@ -19,12 +19,12 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
-        android:name=".VisibleSoundApp"
+        android:name=".BirdeyeApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="false"
-        android:theme="@style/Theme.VisibleSound">
+        android:theme="@style/Theme.Birdeye">
 
         <uses-library
             android:name="android.car"

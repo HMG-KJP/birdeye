@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "visible-sound"
+rootProject.name = "birdeye"
 include(":app")

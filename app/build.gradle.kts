@@ -9,12 +9,12 @@ plugins {
 }
 
 android {
-    namespace = "app.visiblesound"
+    namespace = "app.birdeye"
     compileSdk = 35
     useLibrary("android.car")
 
     defaultConfig {
-        applicationId = "app.visiblesound"
+        applicationId = "app.birdeye"
         minSdk = 28
         targetSdk = 35
         versionCode = 1

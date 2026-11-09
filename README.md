@@ -1,4 +1,4 @@
-# 보이는 소리
+# birdeye
 
 듣지 못하는 운전자를 위해 차가 대신 듣고, 빛과 글자로 보여 주고, 필요하면 대신 말해 주는 Pleos Connect 앱입니다.
 
@@ -35,7 +35,7 @@
 adb install -r -g apk/*.apk
 ```
 
-앱은 사용자 10으로 실행됩니다. 명령줄에서 실행할 때는 `adb shell am start --user 10 -n app.visiblesound/.MainActivity`를 씁니다.
+앱은 사용자 10으로 실행됩니다. 명령줄에서 실행할 때는 `adb shell am start --user 10 -n app.birdeye/.MainActivity`를 씁니다.
 
 ### 데모 보기 (가장 빠른 방법)
 
