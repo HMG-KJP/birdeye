@@ -1,0 +1,14 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+captures/
+.kotlin/
+.DS_Store
+
+# Release signing material
+*.jks
+*.keystore
+keystore.properties

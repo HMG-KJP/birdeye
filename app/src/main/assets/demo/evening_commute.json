@@ -1,0 +1,26 @@
+[
+  {"t": 0,     "type": "seat",     "seat": "DRIVER", "occupied": true},
+  {"t": 0,     "type": "seat",     "seat": "PASSENGER", "occupied": true},
+  {"t": 0,     "type": "gear",     "value": "D"},
+  {"t": 200,   "type": "location", "lat": 37.4979, "lng": 127.0276, "label": "강남대로"},
+
+  {"t": 3000,  "type": "sound",    "kind": "SIREN", "vehicle": "AMBULANCE", "direction": "REAR", "confidence": 0.82, "durationMs": 6000},
+  {"t": 6000,  "type": "caption",  "seat": "PASSENGER", "text": "구급차 지나가면 천천히 가자"},
+
+  {"t": 14000, "type": "caption",  "seat": "PASSENGER", "text": "저기 편의점 앞에 잠깐 세워 줄래?"},
+  {"t": 18000, "type": "reply",    "text": "조금 이따 세울게"},
+
+  {"t": 22000, "type": "location", "lat": 37.5012, "lng": 127.0396, "label": "역삼역 사거리"},
+  {"t": 23000, "type": "sound",    "kind": "HORN", "direction": "LEFT", "confidence": 0.71, "durationMs": 2000},
+  {"t": 30000, "type": "turnSignalStale", "side": "LEFT"},
+  {"t": 34000, "type": "location", "lat": 37.5045, "lng": 127.0490, "label": "테헤란로"},
+  {"t": 39000, "type": "caption",  "seat": "PASSENGER", "text": "오늘 태워 줘서 고마워"},
+  {"t": 41000, "type": "reply",    "text": "응, 알겠어"},
+
+  {"t": 45500, "type": "gear",     "value": "P"},
+  {"t": 46500, "type": "window",   "area": "DRIVER", "position": 60},
+  {"t": 48500, "type": "outside",  "text": "음주 단속 중입니다. 기계에 길게 불어 주세요"},
+  {"t": 53000, "type": "reply",    "text": "저는 청각장애가 있어요. 말씀하시면 화면에 글자로 보입니다. 천천히 말씀해 주세요."},
+  {"t": 60000, "type": "outside",  "text": "네, 확인되셨습니다. 안전 운전하세요"},
+  {"t": 66000, "type": "window",   "area": "DRIVER", "position": 0}
+]

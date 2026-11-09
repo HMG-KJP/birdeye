@@ -1,0 +1,110 @@
+package app.visiblesound.core
+
+/** All driver-facing wording in one place. */
+object Copy {
+    const val WINDOW_INTRO = "저는 청각장애가 있어요. 말씀하시면 화면에 글자로 보입니다. 천천히 말씀해 주세요."
+    val DEFAULT_REPLIES = listOf("응, 알겠어", "조금 이따 세울게", "다시 한 번 말해 줘", "잠깐만 기다려 줘")
+    val WINDOW_REPLIES = listOf("네", "한 번 더 말씀해 주세요", "어디에 세우면 될까요?")
+
+    const val REPLY_SENT = "답장을 보냈어요"
+    const val REPLY_FAILED = "답장을 말하지 못했어요"
+    const val HORN_DURING_SIREN = "경적 · 사이렌과 함께 들렸어요"
+    const val TURN_SIGNAL = "방향지시등이 켜져 있어요"
+    const val TURN_SIGNAL_LOG = "방향지시등이 오래 켜져 있었어요"
+    const val DOOR_OPEN = "문이 열린 채 주행 중이에요"
+    const val DOOR_OPEN_LOG = "문이 열린 채 주행했어요"
+    const val VEHICLE_EYEBROW = "차량 소리"
+
+    /** Warning lamps come from public Safety and Seat APIs and are named here. */
+    fun lampDescription(name: String): String? = when (name) {
+        "안전벨트" -> "안전벨트를 매 주세요"
+        "워셔액" -> "워셔액이 부족해요"
+        "엔진오일" -> "엔진오일을 확인하세요"
+        "브레이크액" -> "브레이크액을 확인하세요"
+        else -> null
+    }
+
+    fun soundEyebrow(kind: SoundKind, direction: Direction?): String {
+        val base = when (kind) {
+            SoundKind.SIREN -> "사이렌 감지"
+            SoundKind.HORN -> "경적 감지"
+        }
+        val where = when (direction) {
+            Direction.FRONT -> "앞쪽에서"
+            Direction.REAR -> "뒤쪽에서"
+            Direction.LEFT -> "왼쪽에서"
+            Direction.RIGHT -> "오른쪽에서"
+            null -> return base
+        }
+        return when (kind) {
+            SoundKind.SIREN -> "$base · $where 접근 중"
+            SoundKind.HORN -> "$base · $where 들려요"
+        }
+    }
+
+    fun soundHeadline(kind: SoundKind, vehicle: EmergencyVehicle?): String = when (kind) {
+        SoundKind.HORN -> "경적이 울렸어요"
+        SoundKind.SIREN -> when (vehicle) {
+            EmergencyVehicle.AMBULANCE -> "구급차가 다가와요"
+            EmergencyVehicle.POLICE -> "경찰차가 다가와요"
+            EmergencyVehicle.FIRE -> "소방차가 다가와요"
+            null -> "긴급차량이 가까이 있어요"
+        }
+    }
+
+    fun soundGuidance(kind: SoundKind, direction: Direction?): String = when {
+        kind == SoundKind.HORN -> "주변 차량을 확인하세요"
+        direction == Direction.REAR -> "오른쪽 차로로 비켜 주세요"
+        else -> "속도를 줄이고 주변을 확인하세요"
+    }
+
+    fun soundLog(kind: SoundKind, direction: Direction?, vehicle: EmergencyVehicle?, seconds: Long): String {
+        val where = when (direction) {
+            Direction.FRONT -> "앞쪽에서 "
+            Direction.REAR -> "뒤쪽에서 "
+            Direction.LEFT -> "왼쪽에서 "
+            Direction.RIGHT -> "오른쪽에서 "
+            null -> ""
+        }
+        val what = when (kind) {
+            SoundKind.HORN -> "경적"
+            SoundKind.SIREN -> when (vehicle) {
+                EmergencyVehicle.AMBULANCE -> "구급차 사이렌"
+                EmergencyVehicle.POLICE -> "경찰차 사이렌"
+                EmergencyVehicle.FIRE -> "소방차 사이렌"
+                null -> "사이렌"
+            }
+        }
+        return "$where$what · 약 ${seconds}초"
+    }
+
+    fun listeningSubtitle(listening: Listening): String = when (listening) {
+        Listening.ACTIVE -> "주변 소리를 듣고 있어요"
+        Listening.NOT_STARTED -> "준비하고 있어요"
+        Listening.NO_PERMISSION, Listening.MIC_ERROR -> "마이크 꺼짐"
+        Listening.DEMO -> "시연 대본으로 움직이고 있어요"
+    }
+
+    /** One line explaining a rhythm, shown next to its dots on the main screen. */
+    fun rhythmLegend(rhythm: LightRhythm): String = when (rhythm) {
+        LightRhythm.SIREN -> "빠른 3회 점멸 = 긴급차량"
+        LightRhythm.HORN -> "강한 1회 = 경적"
+        LightRhythm.PASSENGER -> "부드러운 1회 = 승객의 말"
+        LightRhythm.OUTSIDE -> "부드러운 2회 = 바깥 사람 말"
+        LightRhythm.VEHICLE -> "느린 2회 = 차량 소리"
+    }
+
+    fun rhythmDots(rhythm: LightRhythm): Int = when (rhythm) {
+        LightRhythm.SIREN -> 3
+        LightRhythm.HORN, LightRhythm.PASSENGER -> 1
+        LightRhythm.OUTSIDE, LightRhythm.VEHICLE -> 2
+    }
+}
+
+val Seat.label: String
+    get() = when (this) {
+        Seat.DRIVER -> "운전석"
+        Seat.PASSENGER -> "조수석"
+        Seat.REAR_LEFT -> "뒷좌석 왼쪽"
+        Seat.REAR_RIGHT -> "뒷좌석 오른쪽"
+    }
