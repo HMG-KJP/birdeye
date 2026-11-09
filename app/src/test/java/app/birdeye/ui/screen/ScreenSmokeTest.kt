@@ -113,7 +113,8 @@ class ScreenSmokeTest {
 
     @Test
     fun `a condition that muffles sounds is shown, and the idle card stops calling the road quiet`() {
-        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.RAIN))
+        // At night the briefing merges rain and darkness into one line, so the hour is fixed to daytime.
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.RAIN), UiActions(hourOf = { 12 }))
 
         compose.onNodeWithText(Copy.conditionText(DrivingCondition.RAIN)).assertIsDisplayed()
         compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertDoesNotExist()

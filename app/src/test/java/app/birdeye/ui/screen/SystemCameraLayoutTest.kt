@@ -1,6 +1,7 @@
 package app.birdeye.ui.screen
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -78,7 +79,7 @@ class SystemCameraLayoutTest {
 
         assertInsideWindow("주변을 확인해 주세요", 800.dp)
         assertInsideWindow("구급차 지나가면 천천히 가자", 800.dp)
-        compose.onNodeWithText("최근 소리").assertDoesNotExist()
+        compose.onNodeWithText("최근 소리").assertIsNotDisplayed()
     }
 
     @Test

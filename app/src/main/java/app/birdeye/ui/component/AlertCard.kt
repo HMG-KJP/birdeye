@@ -1,7 +1,6 @@
 package app.birdeye.ui.component
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,11 +13,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import app.birdeye.core.Alert
 import app.birdeye.core.AlertKind
 import app.birdeye.core.Copy
@@ -28,27 +27,20 @@ import app.birdeye.ui.theme.LocalColors
 import app.birdeye.ui.theme.Tokens
 import app.birdeye.ui.theme.fdp
 
-/**
- * Cards size to their content and sit at the top of the window: system UI can cover the lower
- * part, so key information never depends on being vertically centered in a tall window.
- */
+/** The card's words line up with the briefing and recent sounds below them. */
+internal val cardPaddingH
+    @Composable @ReadOnlyComposable
+    get() = if (LocalCompactCards.current) 44.fdp else 52.fdp
+
+internal val Listening.failed get() = this == Listening.NO_PERMISSION || this == Listening.MIC_ERROR
+
 @Composable
-private fun SoundCard(
-    modifier: Modifier,
-    borderColor: Color?,
-    icon: @Composable () -> Unit,
-    words: @Composable () -> Unit,
-) {
-    val shape = RoundedCornerShape(32.fdp)
+private fun SoundHero(icon: @Composable () -> Unit, words: @Composable () -> Unit) {
     val stackedBelow = 680.fdp
     // With little height to spare, the caption below must still fit.
-    val verticalPadding = if (LocalCompactCards.current) 24.fdp else 40.fdp
-    BoxWithConstraints(
-        modifier
-            .background(LocalColors.current.surface, shape)
-            .let { if (borderColor != null) it.border(3.dp, borderColor, shape) else it },
-    ) {
-        val padded = Modifier.fillMaxWidth().padding(vertical = verticalPadding, horizontal = 44.fdp)
+    val verticalPadding = if (LocalCompactCards.current) 24.fdp else 44.fdp
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val padded = Modifier.fillMaxWidth().padding(vertical = verticalPadding, horizontal = cardPaddingH)
         if (maxWidth < stackedBelow) {
             Column(verticalArrangement = Arrangement.spacedBy(20.fdp), modifier = padded) {
                 icon()
@@ -72,20 +64,18 @@ private fun SoundIcon(paths: List<String>, tint: Color, background: Color, descr
     val compact = LocalCompactCards.current
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(if (compact) 96.fdp else 152.fdp).background(background, CircleShape),
+        modifier = Modifier.size(if (compact) 96.fdp else 168.fdp).background(background, CircleShape),
     ) {
-        LineIcon(paths, tint, if (compact) 52.fdp else 80.fdp, strokeWidth = 1.8f, contentDescription = description)
+        LineIcon(paths, tint, if (compact) 52.fdp else 100.fdp, strokeWidth = 1.8f, contentDescription = description)
     }
 }
 
 @Composable
-fun AlertCard(alert: Alert, modifier: Modifier = Modifier) {
+fun AlertHero(alert: Alert) {
     val colors = LocalColors.current
     val tint = colors.accent(alert.kind.accent())
     val isVehicle = alert.kind == AlertKind.VEHICLE
-    SoundCard(
-        modifier = modifier,
-        borderColor = if (isVehicle) null else tint,
+    SoundHero(
         icon = {
             SoundIcon(
                 paths = when (alert.kind) {
@@ -94,8 +84,8 @@ fun AlertCard(alert: Alert, modifier: Modifier = Modifier) {
                     AlertKind.VEHICLE -> LineIcons.warning
                     AlertKind.TRAFFIC -> LineIcons.car
                 },
-                tint = tint,
-                background = if (isVehicle) colors.surfaceHigh else colors.sirenIconBg,
+                tint = if (isVehicle) tint else colors.onFilled,
+                background = if (isVehicle) colors.surfaceHigh else tint,
                 description = alert.eyebrow,
             )
         },
@@ -116,9 +106,10 @@ fun AlertCard(alert: Alert, modifier: Modifier = Modifier) {
  * a deaf driver can't tell a quiet road from a microphone that stopped working.
  */
 @Composable
-fun IdleCard(listening: Listening, scriptStarted: Boolean, muffled: Boolean, modifier: Modifier = Modifier) {
+fun IdleHero(listening: Listening, scriptStarted: Boolean, muffled: Boolean) {
     val colors = LocalColors.current
-    val failed = listening == Listening.NO_PERMISSION || listening == Listening.MIC_ERROR
+    val failed = listening.failed
+    val quietHeadline = if (LocalCompactCards.current) Tokens.titleLarge else Tokens.headlineSmall
     val (headline, detail) = when (listening) {
         Listening.ACTIVE ->
             if (muffled) Copy.MUFFLED_IDLE to Copy.MUFFLED_IDLE_DETAIL else Copy.IDLE_HEADLINE to Copy.IDLE_DETAIL
@@ -134,20 +125,18 @@ fun IdleCard(listening: Listening, scriptStarted: Boolean, muffled: Boolean, mod
                 "시연을 기다리고 있어요" to "설정에서 시연을 시작할 수 있어요"
             }
     }
-    SoundCard(
-        modifier = modifier,
-        borderColor = if (failed) colors.siren else null,
+    SoundHero(
         icon = {
             SoundIcon(
                 paths = if (failed) LineIcons.warning else LineIcons.wave,
-                tint = if (failed) colors.siren else colors.textSecondary,
-                background = if (failed) colors.sirenIconBg else colors.surfaceHigh,
+                tint = if (failed) colors.onFilled else colors.textSecondary,
+                background = if (failed) colors.siren else colors.surfaceHigh,
                 description = null,
             )
         },
         words = {
             Column(verticalArrangement = Arrangement.spacedBy(6.fdp)) {
-                Label(headline, if (failed) Tokens.headlineLarge else Tokens.titleLarge)
+                Label(headline, if (failed) Tokens.headlineLarge else quietHeadline)
                 Label(detail, Tokens.titleMedium, colors.textSecondary)
             }
         },

@@ -34,13 +34,20 @@ class DesignRulesTest {
     @Test
     fun `text and icons reach 4_5 to 1 on every surface in both themes`() {
         palettes.forEach { (theme, c) ->
-            listOf("background" to c.background, "surface" to c.surface, "surfaceHigh" to c.surfaceHigh).forEach { (surface, bg) ->
+            listOf(
+                "background" to c.background,
+                "surface" to c.surface,
+                "surfaceHigh" to c.surfaceHigh,
+                "sirenSurface" to c.sirenSurface,
+            ).forEach { (surface, bg) ->
                 listOf(
                     "textPrimary" to c.textPrimary,
                     "textSecondary" to c.textSecondary,
                     "textTertiary" to c.textTertiary,
                 ).forEach { (name, fg) -> assertReadable("$theme $name on $surface", fg, bg) }
             }
+            assertReadable("$theme siren on sirenSurface", c.siren, c.sirenSurface)
+            assertReadable("$theme outside on sirenSurface", c.outside, c.sirenSurface)
             listOf("background" to c.background, "surface" to c.surface).forEach { (surface, bg) ->
                 listOf(
                     "siren" to c.siren,
@@ -57,6 +64,7 @@ class DesignRulesTest {
         palettes.forEach { (theme, c) ->
             assertReadable("$theme onTalk", c.onTalk, c.talk)
             assertReadable("$theme onOutside", c.onOutside, c.outside)
+            assertReadable("$theme icon on a filled siren", c.onFilled, c.siren)
             assertReadable("$theme onFilled", c.onFilled, c.buttonFilled)
             assertReadable("$theme basic button", c.textPrimary, c.buttonBasic.compositeOver(c.surface))
             assertReadable("$theme selected seat", c.textPrimary, c.seatActive)

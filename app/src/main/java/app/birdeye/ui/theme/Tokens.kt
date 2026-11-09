@@ -98,7 +98,7 @@ data class ColorTokens(
     val vehicle: Color,
     val onTalk: Color,
     val onOutside: Color,
-    val sirenIconBg: Color,
+    val sirenSurface: Color,
     val seatActive: Color,
     val carLine: Color,
     val carGlass: Color,
@@ -137,7 +137,7 @@ object Tokens {
         vehicle = Color(0xFFC9D3DE),
         onTalk = Color(0xFF06232A),
         onOutside = Color(0xFF2A2105),
-        sirenIconBg = Color(0xFF2E2013),
+        sirenSurface = Color(0xFF2E2013),
         seatActive = Color(0xFF0E3A44),
         carLine = Color(0xFFA4A8AE),
         carGlass = Color(0xFF44464E),
@@ -174,7 +174,7 @@ object Tokens {
         vehicle = Color(0xFF4F5B6A),
         onTalk = Color(0xFFFFFFFF),
         onOutside = Color(0xFFFFFFFF),
-        sirenIconBg = Color(0xFFFBE9DA),
+        sirenSurface = Color(0xFFFBE9DA),
         seatActive = Color(0xFFCDEEF4),
         carLine = Color(0xFF686A72),
         carGlass = Color(0xFFC7C9CE),
@@ -261,6 +261,9 @@ object Tokens {
     /** How much of a wide window the map pane takes, so it fits every display's window. */
     const val SIDE_PANE_SHARE = 0.42f
     const val SIDE_PANE_SHARE_COMPACT = 0.34f
+
+    /** The sound and briefing card's share of the height under the page header. */
+    const val SITUATION_CARD_SHARE = 2f / 3f
 
     /** Below this window height the cards tighten up. Connect-S 17 and W-Extended stay above it. */
     const val COMPACT_WINDOW_HEIGHT = 900
