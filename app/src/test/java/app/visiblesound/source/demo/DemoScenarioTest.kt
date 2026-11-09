@@ -2,6 +2,7 @@ package app.visiblesound.source.demo
 
 import app.visiblesound.core.AlertKind
 import app.visiblesound.core.AppEvent
+import app.visiblesound.core.Effect
 import app.visiblesound.core.EngineState
 import app.visiblesound.core.EntryKind
 import app.visiblesound.core.GearPos
@@ -18,7 +19,7 @@ import java.io.File
 class DemoScenarioTest {
     private val json = File("src/main/assets/demo/evening_commute.json").readText()
 
-    private fun replay(): List<UiState> {
+    private fun replay(speaksAloud: Boolean = false): List<UiState> {
         val engine = RuleEngine()
         var state = EngineState()
         val timeline = mutableListOf<UiState>()
@@ -26,10 +27,21 @@ class DemoScenarioTest {
         var clock = 0L
         val end = events.last().t + 10_000
         var next = 0
+        var speechEndsAt: Long? = null
         while (clock <= end) {
             while (next < events.size && events[next].t <= clock) {
-                state = engine.reduce(state, events[next].event).state
+                val reduction = engine.reduce(state, events[next].event)
+                state = reduction.state
+                val spoken = reduction.effects.filterIsInstance<Effect.Speak>().lastOrNull()
+                if (speaksAloud && spoken != null) {
+                    state = engine.reduce(state, AppEvent.Tts(playing = true, at = clock)).state
+                    speechEndsAt = clock + spoken.text.length * SLOW_VOICE_MS_PER_CHAR
+                }
                 next++
+            }
+            if (speechEndsAt != null && clock >= speechEndsAt) {
+                state = engine.reduce(state, AppEvent.Tts(playing = false, at = clock)).state
+                speechEndsAt = null
             }
             state = engine.reduce(state, AppEvent.Tick(clock)).state
             timeline += state.ui
@@ -51,6 +63,22 @@ class DemoScenarioTest {
         assertTrue("conversation follows the siren", talkAt > sirenAt)
         assertTrue("reply follows the conversation", replyAt > talkAt)
         assertTrue("window follows the reply", windowAt > replyAt)
+    }
+
+    @Test
+    fun `no scripted sentence is mistaken for the car's own voice`() {
+        val logged = replay(speaksAloud = true).last().trip.entries.map { it.text }
+        val scripted = DemoScript.parse(json, 0).mapNotNull {
+            when (val event = it.event) {
+                is AppEvent.Caption -> event.text
+                is AppEvent.Outside -> event.text
+                else -> null
+            }
+        }
+
+        val dropped = scripted.filter { sentence -> logged.none { sentence in it } }
+
+        assertTrue("dropped while the car was speaking: $dropped", dropped.isEmpty())
     }
 
     @Test
@@ -82,5 +110,10 @@ class DemoScenarioTest {
             .filter { it.text.length > 30 }
 
         assertTrue("scripted captions over 30 characters: $tooLong", tooLong.isEmpty())
+    }
+
+    private companion object {
+        /** The emulator's voice took up to 7.1 s for the 46-character window sentence; this allows for a slower one. */
+        const val SLOW_VOICE_MS_PER_CHAR = 220L
     }
 }

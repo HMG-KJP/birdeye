@@ -21,6 +21,6 @@
   {"t": 46500, "type": "window",   "area": "DRIVER", "position": 60},
   {"t": 48500, "type": "outside",  "text": "음주 단속 중입니다. 기계에 길게 불어 주세요"},
   {"t": 53000, "type": "reply",    "text": "저는 청각장애가 있어요. 말씀하시면 화면에 글자로 보입니다. 천천히 말씀해 주세요."},
-  {"t": 60000, "type": "outside",  "text": "네, 확인되셨습니다. 안전 운전하세요"},
-  {"t": 66000, "type": "window",   "area": "DRIVER", "position": 0}
+  {"t": 64000, "type": "outside",  "text": "네, 확인되셨습니다. 안전 운전하세요"},
+  {"t": 70000, "type": "window",   "area": "DRIVER", "position": 0}
 ]
