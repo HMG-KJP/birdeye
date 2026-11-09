@@ -2,6 +2,8 @@ package app.visiblesound.source.demo
 
 import app.visiblesound.core.AlertKind
 import app.visiblesound.core.AppEvent
+import app.visiblesound.core.Copy
+import app.visiblesound.core.DrivingCondition
 import app.visiblesound.core.Effect
 import app.visiblesound.core.EngineState
 import app.visiblesound.core.EntryKind
@@ -76,9 +78,33 @@ class DemoScenarioTest {
         assertEquals(1, counts[EntryKind.HORN])
         assertEquals(2, counts[EntryKind.VEHICLE])
         assertEquals(2, counts[EntryKind.OUTSIDE])
+        assertEquals(2, counts[EntryKind.TRAFFIC])
         assertEquals(0, counts[EntryKind.TALK])
         assertEquals(GearPos.P, timeline.last().gear)
         assertTrue(timeline.none { it.screen == Screen.TALK })
+    }
+
+    @Test
+    fun `driving alone shows the swerve notice and says rain may hide sounds`() {
+        val timeline = replay(script = solo)
+
+        assertTrue(timeline.any { it.notice?.headline == Copy.SWERVE })
+        assertTrue(timeline.any { it.condition == DrivingCondition.RAIN && it.alert == null })
+    }
+
+    @Test
+    fun `with a passenger a warning and the weather also reach the conversation`() {
+        val timeline = replay()
+
+        assertTrue(timeline.any { it.alert?.kind == AlertKind.TRAFFIC })
+        assertTrue(timeline.any { it.screen == Screen.TALK && it.alert == null && it.condition != null })
+    }
+
+    @Test
+    fun `neither demo opens the system camera, so its window never appears in them`() {
+        listOf(json, solo).forEach { script ->
+            assertTrue(replay(script = script).none { it.systemCameraUp })
+        }
     }
 
     @Test

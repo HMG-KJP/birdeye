@@ -12,12 +12,16 @@
 
   {"t": 19000, "type": "location", "lat": 37.5012, "lng": 127.0396, "label": "역삼역 사거리"},
   {"t": 20000, "type": "sound",    "kind": "HORN", "direction": "LEFT", "confidence": 0.71, "durationMs": 2000},
-  {"t": 27000, "type": "turnSignalStale", "side": "LEFT"},
+  {"t": 26500, "type": "traffic",  "kind": "CUT_IN", "side": "LEFT"},
+  {"t": 32000, "type": "turnSignalStale", "side": "LEFT"},
+  {"t": 33000, "type": "wiper",    "on": true},
+  {"t": 33000, "type": "noise",    "kind": "RAIN", "confidence": 0.7, "durationMs": 4000},
 
   {"t": 34000, "type": "location", "lat": 37.5045, "lng": 127.0490, "label": "테헤란로"},
   {"t": 34500, "type": "caption",  "seat": "PASSENGER", "text": "오늘 태워 줘서 고마워"},
   {"t": 37000, "type": "reply",    "text": "응, 알겠어"},
 
+  {"t": 40000, "type": "wiper",    "on": false},
   {"t": 40500, "type": "gear",     "value": "P"},
   {"t": 41500, "type": "window",   "area": "DRIVER", "position": 60},
   {"t": 43000, "type": "outside",  "text": "여기 주차하시면 안 돼요"},
