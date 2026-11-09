@@ -4,8 +4,12 @@ import ai.pleos.playground.location.fused.FusedLocation
 import ai.pleos.playground.vehicle.Vehicle
 import android.Manifest
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import androidx.room.Room
 import app.birdeye.core.AppEvent
@@ -15,8 +19,12 @@ import app.birdeye.core.EventBus
 import app.birdeye.core.Listening
 import app.birdeye.core.Screen
 import app.birdeye.core.Seat
+import app.birdeye.core.Alert
+import app.birdeye.output.AlertNotifier
 import app.birdeye.output.AmbientLightPlayer
+import app.birdeye.output.BackgroundAlerts
 import app.birdeye.output.DuckingAudioFocus
+import app.birdeye.output.ListeningService
 import app.birdeye.output.PleosTtsEngine
 import app.birdeye.output.RealAmbientLight
 import app.birdeye.output.SpeechOutput
@@ -46,6 +54,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -112,6 +122,8 @@ class AppContainer(private val context: Context) {
     private var micJob: Job? = null
     private var demoJob: Job? = null
     private var started = false
+    private val appVisible = MutableStateFlow(false)
+    private val notifier by lazy { AlertNotifier(context) }
 
     @Volatile
     private var debugMicFile: FileInputStream? = null
@@ -136,7 +148,11 @@ class AppContainer(private val context: Context) {
         }
         bus.post(AppEvent.SetReplies(settings.replies, clock()))
         uxSource.start(bus::post)
-        if (BuildConfig.DEBUG) logScreenChanges()
+        watchForHiddenAlerts()
+        if (BuildConfig.DEBUG) {
+            logScreenChanges()
+            listenForDebugMicFeed()
+        }
         if (settings.demoMode) {
             bus.post(AppEvent.ListeningChanged(Listening.DEMO, clock()))
         } else {
@@ -173,6 +189,51 @@ class AppContainer(private val context: Context) {
         if (!settings.demoMode) startRealSources()
     }
 
+    /** Follows the activity: the service can only be started while the app is on screen. */
+    fun onAppVisible(visible: Boolean) {
+        appVisible.value = visible
+        if (visible) startListeningService()
+    }
+
+    private fun startListeningService() {
+        if (settings.demoMode || !appVisible.value || !granted(Manifest.permission.RECORD_AUDIO)) return
+        try {
+            context.startForegroundService(Intent(context, ListeningService::class.java))
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "could not keep listening in the background", e)
+        }
+    }
+
+    private fun watchForHiddenAlerts() {
+        scope.launch {
+            var shown: Alert? = null
+            combine(appState.state.map { it.alert }.distinctUntilChanged(), appVisible) { alert, visible -> alert to visible }
+                .collect { (alert, visible) ->
+                    when (val decision = BackgroundAlerts.decide(shown, alert, visible)) {
+                        is BackgroundAlerts.Show -> notifier.show(decision.title, decision.text)
+                        BackgroundAlerts.Clear -> notifier.clear()
+                        null -> Unit
+                    }
+                    shown = alert
+                }
+        }
+    }
+
+    /** Debug builds only: feeds the microphone without opening the app, to test it while hidden. */
+    private fun listenForDebugMicFeed() {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(receiverContext: Context, intent: Intent) {
+                intent.getStringExtra("path")?.let(::debugFeedMic)
+            }
+        }
+        val filter = IntentFilter("app.birdeye.debug.FEED_MIC")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            context.registerReceiver(receiver, filter)
+        }
+    }
+
     /** Debug builds only: play a raw PCM file as if the microphone had heard it. */
     fun debugFeedMic(path: String) {
         if (BuildConfig.DEBUG) {
@@ -200,6 +261,7 @@ class AppContainer(private val context: Context) {
 
     private fun startRealSources() {
         demoJob?.cancel()
+        startListeningService()
         if (vehicleSource == null) {
             vehicleSource = RealVehicleSource(
                 VehicleDomains(
@@ -230,6 +292,7 @@ class AppContainer(private val context: Context) {
     }
 
     private fun stopRealSources() {
+        context.stopService(Intent(context, ListeningService::class.java))
         trafficSource.stop()
         vehicleSource?.stop()
         vehicleSource = null

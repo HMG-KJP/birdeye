@@ -6,6 +6,8 @@ object Copy {
     val DEFAULT_REPLIES = listOf("응, 알겠어", "조금 이따 세울게", "다시 한 번 말해 줘", "잠깐만 기다려 줘")
     val WINDOW_REPLIES = listOf("네", "한 번 더 말씀해 주세요", "어디에 세우면 될까요?")
 
+    const val LISTENING_CHANNEL = "듣는 중"
+    const val SOUNDS_CHANNEL = "사이렌과 경적"
     const val REPLY_SENT = "답장을 보냈어요"
     const val REPLY_FAILED = "답장을 말하지 못했어요"
     const val REPLY_INTERRUPTED = "답장이 중간에 끊겼어요"

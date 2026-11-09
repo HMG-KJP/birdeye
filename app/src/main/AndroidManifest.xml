@@ -18,6 +18,11 @@
     <!-- Shared microphone input for sound classification and speech recognition. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- Keeps listening while navigation or the rear camera covers the app, and says what it heard. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".BirdeyeApp"
         android:allowBackup="false"
@@ -33,6 +38,12 @@
         <meta-data
             android:name="com.hmg.rotary.ROTARY_SUPPORTED"
             android:value="false" />
+
+        <service
+            android:name=".output.ListeningService"
+            android:exported="false"
+            android:foregroundServiceType="microphone"
+            android:stopWithTask="true" />
 
         <activity
             android:name=".MainActivity"

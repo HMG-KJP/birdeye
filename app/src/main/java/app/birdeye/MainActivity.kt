@@ -3,6 +3,7 @@ package app.birdeye
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import androidx.activity.ComponentActivity
@@ -92,6 +93,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        container.onAppVisible(true)
+    }
+
+    override fun onStop() {
+        container.onAppVisible(false)
+        super.onStop()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleDebugIntent(intent)
@@ -126,6 +137,10 @@ class MainActivity : ComponentActivity() {
         const val EXTRA_DEMO = "demo"
         const val EXTRA_DEMO_SCENE = "demoScene"
         const val EXTRA_MIC_FILE = "micFile"
-        val RUNTIME_PERMISSIONS = arrayOf(Manifest.permission.RECORD_AUDIO, "pleos.car.permission.FUSED_LOCATION")
+        val RUNTIME_PERMISSIONS = listOfNotNull(
+            Manifest.permission.RECORD_AUDIO,
+            "pleos.car.permission.FUSED_LOCATION",
+            Manifest.permission.POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU },
+        )
     }
 }

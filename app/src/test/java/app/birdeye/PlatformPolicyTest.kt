@@ -30,4 +30,16 @@ class PlatformPolicyTest {
         assertFalse(activity.contains("finish()"))
         assertFalse(activity.contains("finishAffinity()"))
     }
+
+    @Test
+    fun `the app keeps listening while hidden, and tells the system why`() {
+        assertTrue(manifest.contains("android.permission.FOREGROUND_SERVICE_MICROPHONE"))
+        assertTrue(manifest.contains("android.permission.POST_NOTIFICATIONS"))
+        assertTrue(Regex("""<service[^>]*ListeningService[^>]*foregroundServiceType="microphone"""").containsMatchIn(manifest))
+    }
+
+    @Test
+    fun `closing the app stops the listening`() {
+        assertTrue(Regex("""<service[^>]*ListeningService[^>]*stopWithTask="true"""").containsMatchIn(manifest))
+    }
 }
