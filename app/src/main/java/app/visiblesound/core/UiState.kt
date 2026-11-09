@@ -2,6 +2,15 @@ package app.visiblesound.core
 
 enum class Screen { MAIN, TALK, WINDOW, RECAP }
 enum class AlertKind { SIREN, HORN, VEHICLE }
+/** What may be hiding sounds or the road right now. It informs; it never alerts. */
+enum class DrivingCondition(val muffles: Boolean) {
+    THUNDER(muffles = true),
+    RAIN(muffles = true),
+    WIPER(muffles = true),
+    FOG(muffles = false),
+    WIND(muffles = true),
+}
+
 enum class EntryKind { SIREN, HORN, TALK, VEHICLE, OUTSIDE }
 
 /** Whether sounds are really being watched: a deaf driver has no other way to tell. */
@@ -79,6 +88,7 @@ data class UiState(
     val replies: List<String> = Copy.DEFAULT_REPLIES,
     val trip: TripSummary = TripSummary(),
     val turnSignal: SignalState = SignalState.OFF,
+    val condition: DrivingCondition? = null,
 ) {
     val parked: Boolean get() = gear == GearPos.P && !uxRestricted
 

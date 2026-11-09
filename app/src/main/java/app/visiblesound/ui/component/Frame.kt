@@ -42,7 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.visiblesound.core.Alert
 import app.visiblesound.core.AlertKind
+import app.visiblesound.core.Copy
 import app.visiblesound.core.Direction
+import app.visiblesound.core.DrivingCondition
 import app.visiblesound.core.LightRhythm
 import app.visiblesound.core.Screen
 import app.visiblesound.core.UiState
@@ -299,6 +301,23 @@ fun NoticeBar(notice: Alert) {
             Tokens.bodyLarge.withWeight(FontWeight.Bold),
             maxLines = 1,
         )
+    }
+}
+
+/** Steady, never flashing: it explains why a sound may go unnoticed, and asks nothing of the driver. */
+@Composable
+fun ConditionBar(condition: DrivingCondition) {
+    val colors = LocalColors.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.fdp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.surface, RoundedCornerShape(24.fdp))
+            .padding(vertical = 14.fdp, horizontal = 24.fdp),
+    ) {
+        LineIcon(LineIcons.weather, colors.textSecondary, 36.fdp)
+        Label(Copy.conditionText(condition), Tokens.bodySmall.withWeight(FontWeight.Bold), maxLines = 2)
     }
 }
 

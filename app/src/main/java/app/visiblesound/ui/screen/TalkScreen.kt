@@ -10,6 +10,7 @@ import app.visiblesound.core.Seat
 import app.visiblesound.core.Speaker
 import app.visiblesound.core.UiState
 import app.visiblesound.ui.component.CaptionCard
+import app.visiblesound.ui.component.ConditionBar
 import app.visiblesound.ui.component.HistoryRow
 import app.visiblesound.ui.component.Label
 import app.visiblesound.ui.component.LineIcons
@@ -62,6 +63,7 @@ fun TalkScreen(state: UiState, onePane: Boolean, draft: MutableState<String?>, a
         } else {
             WaitingForSpeech()
         }
+        if (!(onePane && state.systemCameraUp)) state.condition?.let { ConditionBar(it) }
     }
     if (onePane) {
         OnePaneFrame(bandStyle(state)) {

@@ -2,11 +2,13 @@ package app.visiblesound.source
 
 import ai.pleos.playground.vehicle.api.Door
 import ai.pleos.playground.vehicle.api.Gear
+import ai.pleos.playground.vehicle.api.Light
 import ai.pleos.playground.vehicle.api.Safety
 import ai.pleos.playground.vehicle.api.Seat
 import ai.pleos.playground.vehicle.api.SteeringWheel
 import ai.pleos.playground.vehicle.api.TurnSignal
 import ai.pleos.playground.vehicle.api.Window
+import ai.pleos.playground.vehicle.api.Wiper
 import ai.pleos.playground.vehicle.api.model.area.DoorArea as SdkDoorArea
 import ai.pleos.playground.vehicle.api.model.area.SeatArea
 import ai.pleos.playground.vehicle.api.model.area.WindowArea as SdkWindowArea
@@ -17,10 +19,13 @@ import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import ai.pleos.playground.vehicle.constant.area.TurnSignalValue
 import ai.pleos.playground.vehicle.constant.area.WindowValue
+import ai.pleos.playground.vehicle.constant.control.LightState
 import ai.pleos.playground.vehicle.constant.control.OilLevelState
 import ai.pleos.playground.vehicle.constant.control.VehicleGear
+import ai.pleos.playground.vehicle.constant.control.WiperState
 import ai.pleos.playground.vehicle.listener.DoorPositionListener
 import ai.pleos.playground.vehicle.listener.GearSelectionListener
+import ai.pleos.playground.vehicle.listener.LightStateListener
 import ai.pleos.playground.vehicle.listener.LowWasherFluidWaringListener
 import ai.pleos.playground.vehicle.listener.OilLevelStateListener
 import ai.pleos.playground.vehicle.listener.SeatBeltNotBuckledWarningListener
@@ -28,8 +33,10 @@ import ai.pleos.playground.vehicle.listener.SeatOccupancyListener
 import ai.pleos.playground.vehicle.listener.SteeringWheelAngleListener
 import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
 import ai.pleos.playground.vehicle.listener.WindowPositionListener
+import ai.pleos.playground.vehicle.listener.WiperStateListener
 import app.visiblesound.core.AppEvent
 import app.visiblesound.core.DoorArea
+import app.visiblesound.core.FogPosition
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.LampState
 import app.visiblesound.core.SignalState
@@ -53,11 +60,13 @@ class RealVehicleSourceTest {
     private val window = mockk<Window>(relaxed = true)
     private val seat = mockk<Seat>(relaxed = true)
     private val safety = mockk<Safety>(relaxed = true)
+    private val wiper = mockk<Wiper>(relaxed = true)
+    private val light = mockk<Light>(relaxed = true)
     private val config = CapabilityConfig(AccessType.READ)
 
     private val events = mutableListOf<AppEvent>()
     private val source = RealVehicleSource(
-        VehicleDomains(gear, turnSignal, steering, door, window, seat, safety),
+        VehicleDomains(gear, turnSignal, steering, door, window, seat, safety, wiper, light),
         clock = { 5L },
         onError = { _, _ -> },
     )
@@ -77,9 +86,41 @@ class RealVehicleSourceTest {
     private val oilListener = slot<OilLevelStateListener>()
     private val brakeListener = slot<OilLevelStateListener>()
     private val seatListener = slot<SeatOccupancyListener>()
+    private val wiperListener = slot<WiperStateListener>()
+    private val frontFogListener = slot<LightStateListener>()
+    private val rearFogListener = slot<LightStateListener>()
+    private val windshield = SdkWindowArea(WindowValue.FRONT_WINDSHIELD)
 
     @Before
     fun setUp() {
+        every {
+            wiper.checkWiperStateCapabilities(any<(CapabilityConfig, Map<SdkWindowArea, List<WiperState>>) -> Unit>(), any())
+        } answers {
+            firstArg<(CapabilityConfig, Map<SdkWindowArea, List<WiperState>>) -> Unit>()(
+                config,
+                mapOf(windshield to listOf(WiperState.OFF, WiperState.ON)),
+            )
+        }
+        every { wiper.getCurrentWiperState(any(), any(), any()) } answers {
+            secondArg<(WiperState) -> Unit>()(WiperState.ON)
+        }
+        every { wiper.registerWiperState(any(), capture(wiperListener)) } returns Unit
+
+        every { light.checkFrontFogLightStateCapabilities(any(), any()) } answers {
+            firstArg<(CapabilityConfig, List<LightState>) -> Unit>()(config, listOf(LightState.OFF, LightState.ON))
+        }
+        every { light.getCurrentFrontFogLightState(any(), any()) } answers {
+            firstArg<(LightState) -> Unit>()(LightState.OFF)
+        }
+        every { light.registerFrontFogLightState(capture(frontFogListener)) } returns Unit
+        every { light.checkRearFogLightStateCapabilities(any(), any()) } answers {
+            firstArg<(CapabilityConfig, List<LightState>) -> Unit>()(config, listOf(LightState.OFF, LightState.ON))
+        }
+        every { light.getCurrentRearFogLightState(any(), any()) } answers {
+            firstArg<(LightState) -> Unit>()(LightState.OFF)
+        }
+        every { light.registerRearFogLightState(capture(rearFogListener)) } returns Unit
+
         every { gear.getCurrentGearSelectionState(any(), any()) } answers {
             firstArg<(VehicleGear) -> Unit>()(VehicleGear.GEAR_PARK)
         }
@@ -339,7 +380,7 @@ class RealVehicleSourceTest {
             secondArg<(Exception) -> Unit>()(IllegalStateException("no permission"))
         }
         val failing = RealVehicleSource(
-            VehicleDomains(gear, turnSignal, steering, door, window, seat, safety),
+            VehicleDomains(gear, turnSignal, steering, door, window, seat, safety, wiper, light),
             clock = { 5L },
             onError = { what, _ -> errors += what },
         )
@@ -391,7 +432,7 @@ class RealVehicleSourceTest {
         val errors = mutableListOf<String>()
         every { turnSignal.registerTurnSignalState(any()) } throws IllegalStateException("service died")
         val failing = RealVehicleSource(
-            VehicleDomains(gear, turnSignal, steering, door, window, seat, safety),
+            VehicleDomains(gear, turnSignal, steering, door, window, seat, safety, wiper, light),
             clock = { 5L },
             onError = { what, _ -> errors += what },
         )
@@ -411,6 +452,63 @@ class RealVehicleSourceTest {
         started()
 
         verify(exactly = 0) { turnSignal.registerTurnSignalState(any()) }
+    }
+
+    @Test
+    fun `the windshield wiper is checked, read, then followed`() {
+        source.start { events += it }
+
+        verifyOrder {
+            wiper.checkWiperStateCapabilities(any<(CapabilityConfig, Map<SdkWindowArea, List<WiperState>>) -> Unit>(), any())
+            wiper.getCurrentWiperState(windshield, any(), any())
+            wiper.registerWiperState(windshield, any())
+        }
+        assertTrue(AppEvent.Wiper(on = true, at = 5L) in events)
+
+        wiperListener.captured.onWiperStateUpdated(WiperState.OFF)
+
+        assertEquals(AppEvent.Wiper(on = false, at = 5L), events.last())
+    }
+
+    @Test
+    fun `only the windshield wiper counts, not one a car may have on a rear window`() {
+        every {
+            wiper.checkWiperStateCapabilities(any<(CapabilityConfig, Map<SdkWindowArea, List<WiperState>>) -> Unit>(), any())
+        } answers {
+            firstArg<(CapabilityConfig, Map<SdkWindowArea, List<WiperState>>) -> Unit>()(
+                config,
+                mapOf(SdkWindowArea(WindowValue.REAR_WINDSHIELD) to listOf(WiperState.ON)),
+            )
+        }
+
+        source.start { events += it }
+
+        assertTrue(events.none { it is AppEvent.Wiper })
+    }
+
+    @Test
+    fun `both fog lights are followed and reported`() {
+        source.start { events += it }
+
+        frontFogListener.captured.onLightStateUpdated(LightState.ON)
+        assertEquals(AppEvent.FogLight(FogPosition.FRONT, on = true, at = 5L), events.last())
+
+        rearFogListener.captured.onLightStateUpdated(LightState.ON)
+        assertEquals(AppEvent.FogLight(FogPosition.REAR, on = true, at = 5L), events.last())
+
+        rearFogListener.captured.onLightStateUpdated(LightState.OFF)
+        assertEquals(AppEvent.FogLight(FogPosition.REAR, on = false, at = 5L), events.last())
+    }
+
+    @Test
+    fun `stopping releases the wiper and fog light listeners`() {
+        source.start { events += it }
+
+        source.stop()
+
+        verify { wiper.unregisterWiperState(windshield, wiperListener.captured) }
+        verify { light.unregisterFrontFogLightState(frontFogListener.captured) }
+        verify { light.unregisterRearFogLightState(rearFogListener.captured) }
     }
 }
 

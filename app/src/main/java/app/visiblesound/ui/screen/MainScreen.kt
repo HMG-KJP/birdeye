@@ -9,6 +9,7 @@ import app.visiblesound.core.UiState
 import app.visiblesound.ui.component.AlertCard
 import app.visiblesound.ui.component.CaptionCard
 import app.visiblesound.ui.component.CarDirectionDiagram
+import app.visiblesound.ui.component.ConditionBar
 import app.visiblesound.ui.component.IdleCard
 import app.visiblesound.ui.component.Label
 import app.visiblesound.ui.component.LineIcons
@@ -43,8 +44,14 @@ fun MainScreen(state: UiState, onePane: Boolean, actions: UiActions) {
     val cards = @Composable {
         val modifier = Modifier.fillMaxWidth()
         // A script's first event reports the gear; until then none has played.
-        if (alert != null) AlertCard(alert, modifier) else IdleCard(state.listening, state.gear != null, modifier)
+        if (alert != null) {
+            AlertCard(alert, modifier)
+        } else {
+            IdleCard(state.listening, state.gear != null, state.condition?.muffles == true, modifier)
+        }
         state.recentCaption?.let { CaptionCard(it, state.parked, fresh = true) }
+        // A narrow window has no room for it below the system's camera window.
+        if (!(onePane && state.systemCameraUp)) state.condition?.let { ConditionBar(it) }
     }
     if (onePane) {
         OnePaneFrame(band) {

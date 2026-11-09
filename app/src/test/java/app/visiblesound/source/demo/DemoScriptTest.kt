@@ -4,9 +4,11 @@ import app.visiblesound.core.AppEvent
 import app.visiblesound.core.Direction
 import app.visiblesound.core.DoorArea
 import app.visiblesound.core.EmergencyVehicle
+import app.visiblesound.core.FogPosition
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.LampState
 import app.visiblesound.core.Seat
+import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.SignalState
 import app.visiblesound.core.SoundKind
 import app.visiblesound.core.WindowArea
@@ -124,5 +126,22 @@ class DemoScriptTest {
         )
 
         assertEquals(items.map { it.t }.sorted(), items.map { it.t })
+    }
+
+    @Test
+    fun `wiper and fog light items`() {
+        assertEquals(AppEvent.Wiper(on = true, at = 1), one("""{"t": 1, "type": "wiper", "on": true}""").event)
+        assertEquals(
+            AppEvent.FogLight(FogPosition.REAR, on = true, at = 1),
+            one("""{"t": 1, "type": "fogLight", "position": "REAR", "on": true}""").event,
+        )
+    }
+
+    @Test
+    fun `one scripted weather sound becomes a run of frames`() {
+        val frames = DemoScript.parse("""[{"t": 0, "type": "noise", "kind": "RAIN", "confidence": 0.7, "durationMs": 2000}]""", 0)
+
+        assertEquals(4, frames.size)
+        assertEquals(AppEvent.AmbientNoise(NoiseKind.RAIN, 0.7f, at = 500), frames[1].event)
     }
 }

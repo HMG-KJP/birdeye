@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import app.visiblesound.core.CaptionLine
+import app.visiblesound.core.DrivingCondition
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.Screen
 import app.visiblesound.core.SignalState
@@ -196,7 +197,7 @@ class PortraitSystemCameraLayoutTest {
         val latest = line("구급차 지나가면 천천히 가자")
         compose.setContent {
             AppRoot(
-                signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest)),
+                signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest), condition = DrivingCondition.RAIN),
                 UiActions(),
                 FormFactor.L,
             )

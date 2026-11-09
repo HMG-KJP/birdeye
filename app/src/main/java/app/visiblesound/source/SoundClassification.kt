@@ -1,6 +1,7 @@
 package app.visiblesound.source
 
 import app.visiblesound.core.AppEvent
+import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.SoundKind
 
 /**
@@ -19,12 +20,26 @@ object SoundFrameMapper {
     )
     private val HORN_LABELS = setOf("Vehicle horn, car horn, honking", "Air horn, truck horn")
 
-    val LISTENED_LABELS: Set<String> = SIREN_LABELS + HORN_LABELS
+    private val NOISE_LABELS = mapOf(
+        NoiseKind.RAIN to setOf("Rain", "Raindrop", "Rain on surface"),
+        NoiseKind.THUNDER to setOf("Thunder", "Thunderstorm"),
+        NoiseKind.WIND to setOf("Wind", "Wind noise (microphone)"),
+    )
+
+    /** Below this a weather label is just the model's background guess. */
+    private const val NOISE_FLOOR = 0.1f
+
+    val LISTENED_LABELS: Set<String> = SIREN_LABELS + HORN_LABELS + NOISE_LABELS.values.flatten()
 
     fun map(categories: List<Pair<String, Float>>, at: Long): List<AppEvent.Sound> = listOf(
         AppEvent.Sound(SoundKind.SIREN, direction = null, confidence = anyOf(categories, SIREN_LABELS), at = at),
         AppEvent.Sound(SoundKind.HORN, direction = null, confidence = anyOf(categories, HORN_LABELS), at = at),
     )
+
+    fun mapNoise(categories: List<Pair<String, Float>>, at: Long): List<AppEvent.AmbientNoise> =
+        NOISE_LABELS.mapNotNull { (kind, labels) ->
+            anyOf(categories, labels).takeIf { it >= NOISE_FLOOR }?.let { AppEvent.AmbientNoise(kind, it, at) }
+        }
 
     /** The chance at least one of these labels is right. */
     private fun anyOf(categories: List<Pair<String, Float>>, labels: Set<String>): Float =

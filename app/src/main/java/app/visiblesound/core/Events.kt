@@ -24,6 +24,12 @@ sealed interface AppEvent {
     data class SeatOccupied(val seat: Seat, val occupied: Boolean, override val at: Long) : AppEvent
     data class Reply(val text: String, override val at: Long) : AppEvent
 
+    data class Wiper(val on: Boolean, override val at: Long) : AppEvent
+    data class FogLight(val position: FogPosition, val on: Boolean, override val at: Long) : AppEvent
+
+    /** Weather heard through the microphone, which also makes other sounds harder to hear. */
+    data class AmbientNoise(val kind: NoiseKind, val confidence: Float, override val at: Long) : AppEvent
+
     data class Location(val lat: Double, val lng: Double, val label: String?, override val at: Long) : AppEvent
     data class TurnSignalStale(val side: SignalState, override val at: Long) : AppEvent
     /** [interrupted]: something took the car's audio away before the sentence was finished. */
@@ -42,6 +48,8 @@ sealed interface AppEvent {
 }
 
 enum class SoundKind { SIREN, HORN }
+enum class NoiseKind { RAIN, THUNDER, WIND }
+enum class FogPosition { FRONT, REAR }
 enum class EmergencyVehicle { AMBULANCE, POLICE, FIRE }
 enum class Direction { FRONT, REAR, LEFT, RIGHT }
 enum class Seat { DRIVER, PASSENGER, REAR_LEFT, REAR_RIGHT }

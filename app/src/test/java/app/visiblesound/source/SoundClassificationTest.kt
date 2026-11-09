@@ -1,6 +1,7 @@
 package app.visiblesound.source
 
 import app.visiblesound.core.AppEvent
+import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.SoundKind
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -59,6 +60,25 @@ class SoundFrameMapperTest {
 
         assertNull(sound(ambulance, SoundKind.SIREN).vehicle)
         assertNull(sound(police, SoundKind.SIREN).vehicle)
+    }
+
+    @Test
+    fun `rain labels combine into one rain score`() {
+        val noise = SoundFrameMapper.mapNoise(listOf("Rain" to 0.5f, "Raindrop" to 0.5f), at = 7)
+
+        assertEquals(listOf(AppEvent.AmbientNoise(NoiseKind.RAIN, 0.75f, at = 7)), noise)
+    }
+
+    @Test
+    fun `thunder and wind are told apart`() {
+        val noise = SoundFrameMapper.mapNoise(listOf("Thunder" to 0.6f, "Wind noise (microphone)" to 0.4f), at = 7)
+
+        assertEquals(setOf(NoiseKind.THUNDER, NoiseKind.WIND), noise.map { it.kind }.toSet())
+    }
+
+    @Test
+    fun `barely there weather sounds make no event, to keep the stream small`() {
+        assertTrue(SoundFrameMapper.mapNoise(listOf("Rain" to 0.05f, "Siren" to 0.9f), at = 7).isEmpty())
     }
 
     @Test

@@ -11,6 +11,9 @@ data class RuleConfig(
     val frameGapMs: Long = 1_500,
     val soundCooldownMs: Long = 10_000,
     val soundClearMs: Long = 4_000,
+    val noiseThreshold: Float = 0.3f,
+    val noiseFrames: Int = 4,
+    val noiseHoldMs: Long = 30_000,
     val talkHoldMs: Long = 20_000,
     val speechStartGapMs: Long = 5_000,
     val echoGuardMs: Long = 500,
@@ -56,6 +59,10 @@ data class EngineState(
     internal val noticeSource: NoticeSource? = null,
     internal val noticeExpiresAt: Long? = null,
     internal val parkedAt: Long? = null,
+    internal val wiperOn: Boolean = false,
+    internal val fogLights: Set<FogPosition> = emptySet(),
+    internal val noiseStreaks: Map<NoiseKind, Streak> = emptyMap(),
+    internal val noiseUntil: Map<NoiseKind, Long> = emptyMap(),
     internal val lastFix: Fix? = null,
     internal val place: String? = null,
 ) {
@@ -87,6 +94,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         next = evaluateTurnSignal(next, event.at, effects)
         next = evaluateDoors(next, event.at, effects)
         next = evaluateSwerve(next, event.at, effects)
+        next = resolveCondition(next, event.at)
         next = resolveScreen(next)
         return Reduction(next, effects)
     }
@@ -171,6 +179,11 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
                     uxRestricted = state.ui.uxRestricted,
                 ),
             )
+            is AppEvent.Wiper -> state.copy(wiperOn = event.on)
+            is AppEvent.FogLight -> state.copy(
+                fogLights = if (event.on) state.fogLights + event.position else state.fogLights - event.position,
+            )
+            is AppEvent.AmbientNoise -> onNoise(state, event)
             is AppEvent.Tick -> state
         }
 
@@ -505,6 +518,36 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
 
     private fun EngineState.clearNoticeFrom(source: EngineState.NoticeSource) =
         if (noticeSource == source) clearNotice() else this
+
+    // F7 ------------------------------------------------------------------------------------------
+
+    private fun onNoise(state: EngineState, event: AppEvent.AmbientNoise): EngineState {
+        val strong = event.confidence >= config.noiseThreshold
+        val previous = state.noiseStreaks[event.kind]
+        val contiguous = previous != null && event.at - previous.lastAt <= config.frameGapMs
+        val count = when {
+            !strong -> 0
+            contiguous -> previous!!.count + 1
+            else -> 1
+        }
+        val s = state.copy(noiseStreaks = state.noiseStreaks + (event.kind to EngineState.Streak(count, event.at)))
+        if (count < config.noiseFrames) return s
+        return s.copy(noiseUntil = s.noiseUntil + (event.kind to event.at + config.noiseHoldMs))
+    }
+
+    /** Most likely to hide a sound comes first, and fog, which hides only the road, comes after. */
+    private fun resolveCondition(state: EngineState, now: Long): EngineState {
+        fun heard(kind: NoiseKind) = (state.noiseUntil[kind] ?: 0L) > now
+        val condition = when {
+            heard(NoiseKind.THUNDER) -> DrivingCondition.THUNDER
+            heard(NoiseKind.RAIN) -> DrivingCondition.RAIN
+            state.wiperOn -> DrivingCondition.WIPER
+            state.fogLights.isNotEmpty() -> DrivingCondition.FOG
+            heard(NoiseKind.WIND) -> DrivingCondition.WIND
+            else -> null
+        }
+        return state.withUi { copy(condition = condition) }
+    }
 
     // F6 ------------------------------------------------------------------------------------------
 

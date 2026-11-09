@@ -208,6 +208,8 @@ class AppContainer(private val context: Context) {
                     window = vehicle.getWindow(),
                     seat = vehicle.getSeat(),
                     safety = vehicle.getSafety(),
+                    wiper = vehicle.getWiper(),
+                    light = vehicle.getLight(),
                 ),
                 clock = clock,
                 onError = { what, error -> Log.i(TAG, "vehicle: $what: $error") },

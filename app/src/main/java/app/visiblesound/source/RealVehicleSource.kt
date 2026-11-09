@@ -2,11 +2,13 @@ package app.visiblesound.source
 
 import ai.pleos.playground.vehicle.api.Door
 import ai.pleos.playground.vehicle.api.Gear
+import ai.pleos.playground.vehicle.api.Light
 import ai.pleos.playground.vehicle.api.Safety
 import ai.pleos.playground.vehicle.api.Seat
 import ai.pleos.playground.vehicle.api.SteeringWheel
 import ai.pleos.playground.vehicle.api.TurnSignal
 import ai.pleos.playground.vehicle.api.Window
+import ai.pleos.playground.vehicle.api.Wiper
 import ai.pleos.playground.vehicle.api.model.area.SeatArea
 import ai.pleos.playground.vehicle.api.model.capability.AccessType
 import ai.pleos.playground.vehicle.api.model.capability.AreaBounds
@@ -15,10 +17,13 @@ import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import ai.pleos.playground.vehicle.constant.area.TurnSignalValue
 import ai.pleos.playground.vehicle.constant.area.WindowValue
+import ai.pleos.playground.vehicle.constant.control.LightState
 import ai.pleos.playground.vehicle.constant.control.OilLevelState
 import ai.pleos.playground.vehicle.constant.control.VehicleGear
+import ai.pleos.playground.vehicle.constant.control.WiperState
 import ai.pleos.playground.vehicle.listener.DoorPositionListener
 import ai.pleos.playground.vehicle.listener.GearSelectionListener
+import ai.pleos.playground.vehicle.listener.LightStateListener
 import ai.pleos.playground.vehicle.listener.LowWasherFluidWaringListener
 import ai.pleos.playground.vehicle.listener.OilLevelStateListener
 import ai.pleos.playground.vehicle.listener.SeatBeltNotBuckledWarningListener
@@ -26,8 +31,10 @@ import ai.pleos.playground.vehicle.listener.SeatOccupancyListener
 import ai.pleos.playground.vehicle.listener.SteeringWheelAngleListener
 import ai.pleos.playground.vehicle.listener.TurnSignalStateListener
 import ai.pleos.playground.vehicle.listener.WindowPositionListener
+import ai.pleos.playground.vehicle.listener.WiperStateListener
 import app.visiblesound.core.AppEvent
 import app.visiblesound.core.DoorArea
+import app.visiblesound.core.FogPosition
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.LampState
 import app.visiblesound.core.SignalState
@@ -51,6 +58,8 @@ class VehicleDomains(
     val window: Window,
     val seat: Seat,
     val safety: Safety,
+    val wiper: Wiper,
+    val light: Light,
 )
 
 /** Maps a raw position to 0..100 using the range this car reports. */
@@ -93,6 +102,9 @@ class RealVehicleSource(
         guarded("washer fluid") { startWasherFluid(sink) }
         guarded("engine oil") { startFluidLevel(sink, ENGINE_OIL, FluidLevel.ENGINE_OIL) }
         guarded("brake fluid") { startFluidLevel(sink, BRAKE_FLUID, FluidLevel.BRAKE_FLUID) }
+        guarded("wiper") { startWiper(sink) }
+        guarded("front fog light") { startFogLight(sink, FogPosition.FRONT) }
+        guarded("rear fog light") { startFogLight(sink, FogPosition.REAR) }
     }
 
     override fun stop() {
@@ -313,6 +325,63 @@ class RealVehicleSource(
                 )
             }
         }, failure("washer fluid"))
+    }
+
+    private fun startWiper(sink: (AppEvent) -> Unit) {
+        domains.wiper.checkWiperStateCapabilities({ config: CapabilityConfig, areas: Map<SdkWindowArea, List<WiperState>> ->
+            val windshield = areas.keys.firstOrNull { WindowValue.FRONT_WINDSHIELD in it.values }
+            if (config.readable() && windshield != null) whenRunning("wiper") {
+                val emit = { state: WiperState? -> state?.let { sink(AppEvent.Wiper(it == WiperState.ON, clock())) } }
+                domains.wiper.getCurrentWiperState(windshield, { emit(it) }, failure("wiper"))
+                val listener = object : WiperStateListener {
+                    override fun onWiperStateUpdated(state: WiperState?) {
+                        emit(state)
+                    }
+
+                    override fun onFailed(exception: Exception) = onError("wiper", exception)
+                }
+                subscribe(
+                    { domains.wiper.registerWiperState(windshield, listener) },
+                    { domains.wiper.unregisterWiperState(windshield, listener) },
+                )
+            }
+        }, failure("wiper"))
+    }
+
+    private fun startFogLight(sink: (AppEvent) -> Unit, position: FogPosition) {
+        val what = "fog light"
+        val emit = { state: LightState? -> state?.let { sink(AppEvent.FogLight(position, it == LightState.ON, clock())) } }
+        val listener = object : LightStateListener {
+            override fun onLightStateUpdated(state: LightState?) {
+                emit(state)
+            }
+
+            override fun onFailed(exception: Exception) = onError(what, exception)
+        }
+        val onChecked = { config: CapabilityConfig, _: List<LightState> ->
+            if (config.readable()) whenRunning(what) {
+                when (position) {
+                    FogPosition.FRONT -> {
+                        domains.light.getCurrentFrontFogLightState({ emit(it) }, failure(what))
+                        subscribe(
+                            { domains.light.registerFrontFogLightState(listener) },
+                            { domains.light.unregisterFrontFogLightState(listener) },
+                        )
+                    }
+                    FogPosition.REAR -> {
+                        domains.light.getCurrentRearFogLightState({ emit(it) }, failure(what))
+                        subscribe(
+                            { domains.light.registerRearFogLightState(listener) },
+                            { domains.light.unregisterRearFogLightState(listener) },
+                        )
+                    }
+                }
+            }
+        }
+        when (position) {
+            FogPosition.FRONT -> domains.light.checkFrontFogLightStateCapabilities(onChecked, failure(what))
+            FogPosition.REAR -> domains.light.checkRearFogLightStateCapabilities(onChecked, failure(what))
+        }
     }
 
     private enum class FluidLevel { ENGINE_OIL, BRAKE_FLUID }

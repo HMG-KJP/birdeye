@@ -15,6 +15,7 @@ import app.visiblesound.core.AlertKind
 import app.visiblesound.core.CaptionLine
 import app.visiblesound.core.Copy
 import app.visiblesound.core.Direction
+import app.visiblesound.core.DrivingCondition
 import app.visiblesound.core.EntryKind
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.LightRhythm
@@ -106,6 +107,37 @@ class ScreenSmokeTest {
 
         compose.onNodeWithText("대본을 기다리고 있어요").assertDoesNotExist()
         compose.onNodeWithText("조용해요").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a condition that muffles sounds is shown, and the idle card stops calling the road quiet`() {
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.RAIN))
+
+        compose.onNodeWithText(Copy.conditionText(DrivingCondition.RAIN)).assertIsDisplayed()
+        compose.onNodeWithText("조용해요").assertDoesNotExist()
+        compose.onNodeWithText(Copy.MUFFLED_IDLE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `fog is shown but the road can still be called quiet, since fog does not muffle sound`() {
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.FOG))
+
+        compose.onNodeWithText(Copy.conditionText(DrivingCondition.FOG)).assertIsDisplayed()
+        compose.onNodeWithText("조용해요").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the condition stays visible beside an alert and on the talk screen`() {
+        show(UiState(gear = GearPos.D, alert = sirenAlert, condition = DrivingCondition.WIPER))
+        compose.onNodeWithText(Copy.conditionText(DrivingCondition.WIPER)).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the condition is on the talk screen too`() {
+        show(UiState(gear = GearPos.D, screen = Screen.TALK, captions = listOf(line("저기")), condition = DrivingCondition.THUNDER))
+
+        compose.onNodeWithText(Copy.conditionText(DrivingCondition.THUNDER)).assertIsDisplayed()
+        compose.onNodeWithText("저기").assertIsDisplayed()
     }
 
     @Test

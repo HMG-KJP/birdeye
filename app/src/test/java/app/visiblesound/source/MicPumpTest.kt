@@ -1,6 +1,7 @@
 package app.visiblesound.source
 
 import app.visiblesound.core.AppEvent
+import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.SoundKind
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -56,6 +57,26 @@ class MicPumpTest {
         windowSize = windowSize,
         hopSize = hopSize,
     )
+
+    @Test
+    fun `the same classifier frame also reports rain and wind`() = runTest {
+        MicPump(
+            reader = FakeReader(2),
+            classify = { listOf("Rain" to 0.7f) },
+            speech = speech,
+            speechOpen = { true },
+            clock = { 42L },
+            sink = { events += it },
+            chunkSize = 4,
+            windowSize = 8,
+            hopSize = 4,
+        ).run()
+
+        assertEquals(
+            AppEvent.AmbientNoise(NoiseKind.RAIN, 0.7f, at = 42L),
+            events.filterIsInstance<AppEvent.AmbientNoise>().first(),
+        )
+    }
 
     @Test
     fun `sound classification sees overlapping windows of the stream`() = runTest {

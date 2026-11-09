@@ -84,6 +84,7 @@ object LineIcons {
     val siren = listOf("M7 18v-6a5 5 0 0 1 10 0v6", "M5 21h14v-3H5z", "M12 3v2M4.2 6.2l1.4 1.4M19.8 6.2l-1.4 1.4")
     val horn = listOf("M4 10v4h3l6 4V6L7 10z", "M16 9.5a3.5 3.5 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10")
     val warning = listOf("M12 4l9 16H3z", "M12 10v4M12 17v0.5")
+    val weather = listOf("M7 15a4 4 0 0 1-.5-8A5.5 5.5 0 0 1 17 7.5a3.8 3.8 0 0 1 0 7.5z", "M9 18l-1 3M13 18l-1 3M17 18l-1 3")
     val chat = listOf("M4 5h16v11H9l-5 4z", "M8 10h8M8 13h5")
     val window = listOf("M4 20V8l6-4h10v16z", "M4 12h16")
     val outside = listOf("M3 12h4M17 12h4M12 3v4M12 17v4", "M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6")

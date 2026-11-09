@@ -18,6 +18,16 @@ object Copy {
     const val SWERVE = "핸들을 급하게 꺾었어요"
     const val SWERVE_GUIDANCE = "주변 차량을 확인하세요"
     const val SWERVE_LOG = "핸들을 급하게 꺾었어요"
+    const val MUFFLED_IDLE = "조용한지 확실하지 않아요"
+    const val MUFFLED_IDLE_DETAIL = "사이렌과 경적을 놓칠 수 있으니 주변을 더 살펴 주세요"
+
+    fun conditionText(condition: DrivingCondition): String = when (condition) {
+        DrivingCondition.THUNDER -> "천둥이 치고 있어요 · 소리 감지가 약할 수 있어요"
+        DrivingCondition.RAIN -> "빗소리가 커요 · 소리 감지가 약할 수 있어요"
+        DrivingCondition.WIPER -> "와이퍼가 움직여요 · 소리 감지가 약할 수 있어요"
+        DrivingCondition.FOG -> "안개등이 켜져 있어요 · 시야가 좁을 수 있어요"
+        DrivingCondition.WIND -> "바람 소리가 커요 · 소리 감지가 약할 수 있어요"
+    }
 
     /** Warning lamps come from public Safety and Seat APIs and are named here. */
     fun lampDescription(name: String): String? = when (name) {

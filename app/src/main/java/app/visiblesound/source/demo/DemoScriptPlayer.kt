@@ -4,8 +4,10 @@ import app.visiblesound.core.AppEvent
 import app.visiblesound.core.Direction
 import app.visiblesound.core.DoorArea
 import app.visiblesound.core.EmergencyVehicle
+import app.visiblesound.core.FogPosition
 import app.visiblesound.core.GearPos
 import app.visiblesound.core.LampState
+import app.visiblesound.core.NoiseKind
 import app.visiblesound.core.Seat
 import app.visiblesound.core.SignalState
 import app.visiblesound.core.SoundKind
@@ -62,7 +64,19 @@ object DemoScript {
                 AppEvent.Location(item["lat"].asDouble, item["lng"].asDouble, stringOrNull("label"), at),
             )
             "reply" -> single(AppEvent.Reply(string("text"), at))
+            "wiper" -> single(AppEvent.Wiper(item["on"].asBoolean, at))
+            "fogLight" -> single(AppEvent.FogLight(FogPosition.valueOf(string("position")), item["on"].asBoolean, at))
+            "noise" -> noiseFrames(item, t, startAt)
             else -> throw IllegalArgumentException("Unknown demo script item type: $type")
+        }
+    }
+
+    private fun noiseFrames(item: JsonObject, t: Long, startAt: Long): List<TimedEvent> {
+        val kind = NoiseKind.valueOf(item["kind"].asString)
+        val confidence = item["confidence"].asFloat
+        val duration = item["durationMs"]?.asLong ?: DEFAULT_SOUND_MS
+        return (0 until duration step FRAME_MS).map { offset ->
+            TimedEvent(t + offset, AppEvent.AmbientNoise(kind, confidence, startAt + t + offset))
         }
     }
 

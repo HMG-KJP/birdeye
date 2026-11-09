@@ -59,7 +59,10 @@ class MicPump(
 
     private fun classifyFrame(frame: FloatArray) {
         try {
-            SoundFrameMapper.map(classify(frame), clock()).forEach(sink)
+            val scores = classify(frame)
+            val now = clock()
+            SoundFrameMapper.map(scores, now).forEach(sink)
+            SoundFrameMapper.mapNoise(scores, now).forEach(sink)
         } catch (e: Exception) {
             onError(e)
         }
