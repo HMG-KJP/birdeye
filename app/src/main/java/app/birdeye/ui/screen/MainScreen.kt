@@ -15,6 +15,7 @@ import app.birdeye.ui.component.BirdEyeMap
 import app.birdeye.ui.component.BriefingAndRecent
 import app.birdeye.ui.component.BriefingCard
 import app.birdeye.ui.component.CaptionsHeldCard
+import app.birdeye.ui.component.DoorStatusCard
 import app.birdeye.ui.component.IdleCard
 import app.birdeye.ui.component.LineIcons
 import app.birdeye.ui.component.LocalSystemCameraHeight
@@ -57,6 +58,7 @@ fun MainScreen(state: UiState, onePane: Boolean, actions: UiActions) {
             IdleCard(state.listening, state.gear != null, state.condition?.muffles == true, modifier)
         }
         state.alsoHeard?.let { AlsoHeardCard(it) }
+        DoorStatusCard(state)
         state.recentCaption?.let {
             if (state.captionsHeld) CaptionsHeldCard() else CaptionCard(it, state.parked, fresh = true)
         }
@@ -66,7 +68,7 @@ fun MainScreen(state: UiState, onePane: Boolean, actions: UiActions) {
             if (state.parked) MainNavigation(state, actions)
             cards()
             if (!cameraUp) {
-                BirdEyeMap(mapSounds(state, colors), Modifier.weight(1f).fillMaxWidth())
+                BirdEyeMap(mapSounds(state, colors), Modifier.weight(1f).fillMaxWidth(), doors = state.openDoors)
                 BriefingCard(briefing.take(1))
             }
         }

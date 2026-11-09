@@ -26,5 +26,9 @@
   {"t": 38000, "type": "outside",  "text": "여기 주차하시면 안 돼요"},
   {"t": 41000, "type": "reply",    "text": "어디에 세우면 될까요?"},
   {"t": 45000, "type": "outside",  "text": "저쪽 주차장 입구 쪽에 세우시면 돼요"},
-  {"t": 49500, "type": "window",   "area": "DRIVER", "position": 0}
+  {"t": 49500, "type": "window",   "area": "DRIVER", "position": 0},
+
+  {"t": 51000, "type": "door",     "area": "PASSENGER", "open": true},
+  {"t": 53000, "type": "seat",     "seat": "PASSENGER", "occupied": false},
+  {"t": 55000, "type": "door",     "area": "PASSENGER", "open": false}
 ]

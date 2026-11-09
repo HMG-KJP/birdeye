@@ -24,6 +24,7 @@ import app.birdeye.ui.component.Label
 import app.birdeye.ui.component.LineIcon
 import app.birdeye.ui.component.LineIcons
 import app.birdeye.ui.component.NoticeBar
+import app.birdeye.ui.component.DoorStatusCard
 import app.birdeye.ui.component.MapPane
 import app.birdeye.ui.component.MapSound
 import app.birdeye.ui.component.OnePaneFrame
@@ -115,6 +116,7 @@ fun WindowScreen(state: UiState, onePane: Boolean, actions: UiActions) {
             navigation()
             state.notice?.let { NoticeBar(it) }
             OutsideCard(state)
+            DoorStatusCard(state)
             Spacer(Modifier.weight(1f))
             WindowActions(state, actions, showIntroText = false)
         }
@@ -143,6 +145,7 @@ fun WindowScreen(state: UiState, onePane: Boolean, actions: UiActions) {
         navigation()
         state.notice?.let { NoticeBar(it) }
         OutsideCard(state)
+        DoorStatusCard(state)
         Spacer(Modifier.weight(1f))
         WindowActions(state, actions, showIntroText = true)
     }

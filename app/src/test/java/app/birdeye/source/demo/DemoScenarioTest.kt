@@ -3,6 +3,7 @@ package app.birdeye.source.demo
 import app.birdeye.core.AlertKind
 import app.birdeye.core.AppEvent
 import app.birdeye.core.Copy
+import app.birdeye.core.DoorArea
 import app.birdeye.core.DrivingCondition
 import app.birdeye.core.Effect
 import app.birdeye.core.EngineState
@@ -96,6 +97,15 @@ class DemoScenarioTest {
         val timeline = replay()
 
         assertTrue(timeline.any { it.screen == Screen.TALK && it.alert == null && it.condition != null })
+    }
+
+    @Test
+    fun `when the passenger gets out, the door is shown open and then told as closed`() {
+        val timeline = replay()
+
+        assertTrue(timeline.any { DoorArea.PASSENGER in it.openDoors })
+        assertTrue(timeline.any { it.doorJustClosed == DoorArea.PASSENGER })
+        assertTrue(timeline.last().openDoors.isEmpty())
     }
 
     @Test

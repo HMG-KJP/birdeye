@@ -278,4 +278,63 @@ class F5VehicleSoundRulesTest {
 
         assertEquals("방향지시등이 켜져 있어요", h.ui.notice?.headline)
     }
+
+    private fun anyGear(gear: GearPos) = EngineHarness().gear(gear)
+
+    @Test
+    fun `an open door is known to the screen in any gear, because a deaf driver can't hear it`() {
+        listOf(GearPos.P, GearPos.D).forEach { gear ->
+            val h = anyGear(gear).send(door(true, at = 1, area = DoorArea.REAR_RIGHT))
+
+            assertEquals(setOf(DoorArea.REAR_RIGHT), h.ui.openDoors)
+            assertNull(h.ui.notice)
+        }
+    }
+
+    @Test
+    fun `a door closing stands in for the sound of it, then goes away`() {
+        val h = anyGear(GearPos.P)
+            .send(door(true, at = 1, area = DoorArea.PASSENGER))
+            .send(door(false, at = 1_000, area = DoorArea.PASSENGER))
+
+        assertEquals(emptySet<DoorArea>(), h.ui.openDoors)
+        assertEquals(DoorArea.PASSENGER, h.ui.doorJustClosed)
+
+        h.tick(1_000 + 5_000)
+        assertNull(h.ui.doorJustClosed)
+    }
+
+    @Test
+    fun `a door opening again replaces its closed message`() {
+        val h = anyGear(GearPos.P)
+            .send(door(true, at = 1, area = DoorArea.PASSENGER))
+            .send(door(false, at = 1_000, area = DoorArea.PASSENGER))
+            .send(door(true, at = 2_000, area = DoorArea.PASSENGER))
+
+        assertNull(h.ui.doorJustClosed)
+    }
+
+    @Test
+    fun `a report that a closed door is closed announces nothing`() {
+        val h = anyGear(GearPos.P).send(door(false, at = 1, area = DoorArea.PASSENGER))
+
+        assertNull(h.ui.doorJustClosed)
+    }
+
+    @Test
+    fun `a door closing during a trip can be found in the recap`() {
+        val h = anyGear(GearPos.D)
+            .send(door(true, at = 1, area = DoorArea.REAR_LEFT))
+            .send(door(false, at = 1_000, area = DoorArea.REAR_LEFT))
+
+        assertEquals("왼쪽 뒷문이 닫혔어요", h.ui.trip.entries.single().text)
+    }
+
+    @Test
+    fun `door wording names which door`() {
+        assertEquals("운전석 문이 열려 있어요", Copy.doorOpen(DoorArea.DRIVER))
+        assertEquals("조수석 문이 열려 있어요", Copy.doorOpen(DoorArea.PASSENGER))
+        assertEquals("왼쪽 뒷문이 닫혔어요", Copy.doorClosed(DoorArea.REAR_LEFT))
+        assertEquals("오른쪽 뒷문이 열려 있어요", Copy.doorOpen(DoorArea.REAR_RIGHT))
+    }
 }

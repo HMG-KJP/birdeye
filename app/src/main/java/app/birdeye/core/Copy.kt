@@ -36,6 +36,22 @@ object Copy {
         Direction.RIGHT -> "오른쪽"
     }
 
+    private fun doorName(area: DoorArea) = when (area) {
+        DoorArea.DRIVER -> "운전석 문"
+        DoorArea.PASSENGER -> "조수석 문"
+        DoorArea.REAR_LEFT -> "왼쪽 뒷문"
+        DoorArea.REAR_RIGHT -> "오른쪽 뒷문"
+    }
+
+    fun doorOpen(area: DoorArea) = "${doorName(area)}이 열려 있어요"
+    fun doorClosed(area: DoorArea) = "${doorName(area)}이 닫혔어요"
+
+    /** The side is already on the map, so the label only says which door on that side. */
+    fun doorMapLabel(area: DoorArea) = when (area) {
+        DoorArea.DRIVER, DoorArea.PASSENGER -> "앞문 열림"
+        DoorArea.REAR_LEFT, DoorArea.REAR_RIGHT -> "뒷문 열림"
+    }
+
     fun trafficEyebrow(side: Direction) = "주변 차량 경고 · ${sideName(side)}"
 
     fun trafficHeadline(kind: TrafficKind, side: Direction) = when (kind) {

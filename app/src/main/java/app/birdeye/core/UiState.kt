@@ -91,6 +91,10 @@ data class UiState(
     val trip: TripSummary = TripSummary(),
     val turnSignal: SignalState = SignalState.OFF,
     val condition: DrivingCondition? = null,
+    /** Read from the door sensors. Which door is open, in any gear, since it can't be heard. */
+    val openDoors: Set<DoorArea> = emptySet(),
+    /** Stands in for the sound of a door shutting, for a few seconds. */
+    val doorJustClosed: DoorArea? = null,
     /** About to turn: reading can wait, while sirens and horns still come through. */
     val captionsHeld: Boolean = false,
 ) {

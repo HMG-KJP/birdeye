@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
@@ -33,6 +34,7 @@ import app.birdeye.R
 import app.birdeye.core.AlertKind
 import app.birdeye.core.Copy
 import app.birdeye.core.Direction
+import app.birdeye.core.DoorArea
 import app.birdeye.core.DrivingCondition
 import app.birdeye.core.Seat
 import app.birdeye.core.UiState
@@ -90,6 +92,7 @@ fun BirdEyeMap(
     seat: Seat? = null,
     windowOpen: Boolean = false,
     rain: Boolean = false,
+    doors: Set<DoorArea> = emptySet(),
 ) {
     val colors = LocalColors.current
     val dark = colors.background == Tokens.dark.background
@@ -107,12 +110,31 @@ fun BirdEyeMap(
                 drawCircle(ringColor, size.width * RING_INNER, style = Stroke(size.width * 0.004f))
                 if (rain) drawRain(colors.textTertiary)
                 sounds.forEach { drawSound(it, sectorAlpha) }
+                doors.forEach { drawDoorGlow(it, colors.outside) }
             }
             Image(painterResource(car), contentDescription = null, modifier = Modifier.height(side * CAR_HEIGHT).aspectRatio(CAR_ASPECT))
             Canvas(Modifier.fillMaxSize()) { drawOnCar(seat, windowOpen, colors) }
-            SideLabels(sounds)
+            SideLabels(sounds, doors)
         }
     }
+}
+
+/** Still light spilling out on the side of an open door, the way the driving view lights up a side. */
+private fun DrawScope.drawDoorGlow(door: DoorArea, color: Color) {
+    val carHeight = size.width * CAR_HEIGHT
+    val carWidth = carHeight * CAR_ASPECT
+    val onLeft = door == DoorArea.DRIVER || door == DoorArea.REAR_LEFT
+    val inFront = door == DoorArea.DRIVER || door == DoorArea.PASSENGER
+    val glow = Offset(
+        center.x + (carWidth / 2 + size.width * 0.05f) * if (onLeft) -1 else 1,
+        center.y + carHeight * if (inFront) -0.03f else 0.17f,
+    )
+    val radius = size.width * 0.16f
+    drawCircle(
+        Brush.radialGradient(0f to color.copy(alpha = 0.9f), 1f to color.copy(alpha = 0f), center = glow, radius = radius),
+        radius,
+        glow,
+    )
 }
 
 private fun DrawScope.drawRain(color: Color) {
@@ -184,7 +206,7 @@ private fun DrawScope.drawOnCar(seat: Seat?, windowOpen: Boolean, colors: ColorT
 }
 
 @Composable
-private fun SideLabels(sounds: List<MapSound>) {
+private fun SideLabels(sounds: List<MapSound>, doors: Set<DoorArea>) {
     val colors = LocalColors.current
     val style = Tokens.bodySmall.withWeight(FontWeight.Bold)
     fun heard(direction: Direction) = sounds.filter { it.side == direction }.takeIf { it.isNotEmpty() }
@@ -209,11 +231,13 @@ private fun SideLabels(sounds: List<MapSound>) {
         Column(Modifier.align(Alignment.CenterStart), horizontalAlignment = Alignment.CenterHorizontally) {
             Line("왼쪽", left?.first()?.color ?: colors.textTertiary)
             left?.forEach { Line(it.name, it.color) }
+            doors.filter { it == DoorArea.DRIVER || it == DoorArea.REAR_LEFT }.forEach { Line(Copy.doorMapLabel(it), colors.outside) }
         }
         val right = heard(Direction.RIGHT)
         Column(Modifier.align(Alignment.CenterEnd), horizontalAlignment = Alignment.CenterHorizontally) {
             Line("오른쪽", right?.first()?.color ?: colors.textTertiary)
             right?.forEach { Line(it.name, it.color) }
+            doors.filter { it == DoorArea.PASSENGER || it == DoorArea.REAR_RIGHT }.forEach { Line(Copy.doorMapLabel(it), colors.outside) }
         }
     }
 }
@@ -235,6 +259,7 @@ fun ColumnScope.MapPane(state: UiState, sounds: List<MapSound>, seat: Seat? = nu
         seat = seat,
         windowOpen = windowOpen,
         rain = state.condition == DrivingCondition.RAIN || state.condition == DrivingCondition.THUNDER,
+        doors = state.openDoors,
         modifier = Modifier.weight(1f).fillMaxWidth(),
     )
     RhythmLegend((state.alert ?: state.notice)?.rhythm)

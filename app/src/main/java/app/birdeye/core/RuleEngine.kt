@@ -16,6 +16,7 @@ data class RuleConfig(
     val frameGapMs: Long = 1_500,
     val soundCooldownMs: Long = 10_000,
     val soundClearMs: Long = 4_000,
+    val doorClosedHoldMs: Long = 5_000,
     val trafficHoldMs: Long = 5_000,
     val noiseThreshold: Float = 0.3f,
     val noiseFrames: Int = 4,
@@ -60,7 +61,7 @@ data class EngineState(
     internal val lastSwerveAt: Long? = null,
     internal val signalSince: Long? = null,
     internal val signalNotified: Boolean = false,
-    internal val openDoors: Set<DoorArea> = emptySet(),
+    internal val doorClosedUntil: Long? = null,
     internal val doorNotified: Boolean = false,
     internal val lamps: Map<String, LampState> = emptyMap(),
     internal val noticeSource: NoticeSource? = null,
@@ -115,6 +116,11 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             s = logActiveSound(s, effects)
                 .copy(activeSound = null, alsoHeardUntil = null)
                 .withUi { copy(alert = null, alsoHeard = null) }
+        }
+
+        val doorClosedUntil = s.doorClosedUntil
+        if (doorClosedUntil != null && now >= doorClosedUntil) {
+            s = s.copy(doorClosedUntil = null).withUi { copy(doorJustClosed = null) }
         }
 
         val alsoHeardUntil = s.alsoHeardUntil
@@ -176,9 +182,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             is AppEvent.Steering -> onSteering(state, event)
             is AppEvent.WindowPos ->
                 if (event.area == WindowArea.DRIVER) state.withUi { copy(driverWindowPercent = event.percent) } else state
-            is AppEvent.DoorOpen -> state.copy(
-                openDoors = if (event.open) state.openDoors + event.area else state.openDoors - event.area,
-            )
+            is AppEvent.DoorOpen -> onDoor(state, event, effects)
             is AppEvent.Telltale -> onLamp(state, event, effects)
             is AppEvent.SeatOccupied -> state.withUi {
                 copy(occupiedSeats = if (event.occupied) occupiedSeats + event.seat else occupiedSeats - event.seat)
@@ -470,9 +474,25 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         )
     }
 
+    /** A driver who can't hear a door shut needs to be told, so this is not one of the optional alerts. */
+    private fun onDoor(state: EngineState, event: AppEvent.DoorOpen, effects: MutableList<Effect>): EngineState {
+        val wasOpen = event.area in state.ui.openDoors
+        val s = state.withUi {
+            copy(
+                openDoors = if (event.open) openDoors + event.area else openDoors - event.area,
+                doorJustClosed = if (event.open && doorJustClosed == event.area) null else doorJustClosed,
+            )
+        }
+        if (event.open || !wasOpen) return s
+        val closed = s
+            .copy(doorClosedUntil = event.at + config.doorClosedHoldMs)
+            .withUi { copy(doorJustClosed = event.area) }
+        return log(closed, EntryKind.VEHICLE, event.at, Copy.doorClosed(event.area), effects)
+    }
+
     private fun evaluateDoors(state: EngineState, now: Long, effects: MutableList<Effect>): EngineState {
         if (!config.vehicleAlerts) return state
-        val drivingWithDoorOpen = state.ui.gear == GearPos.D && state.openDoors.isNotEmpty()
+        val drivingWithDoorOpen = state.ui.gear == GearPos.D && state.ui.openDoors.isNotEmpty()
         return when {
             !drivingWithDoorOpen ->
                 state.copy(doorNotified = false).clearNoticeFrom(EngineState.NoticeSource.Door)

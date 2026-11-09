@@ -43,6 +43,24 @@ fun AlsoHeardCard(alert: Alert) {
     }
 }
 
+/** Which door is open, and the moment one shuts: a driver who can't hear it has no other way to tell. */
+@Composable
+fun DoorStatusCard(state: UiState) {
+    val lines = state.openDoors.sortedBy { it.ordinal }.map(Copy::doorOpen) +
+        listOfNotNull(state.doorJustClosed?.let(Copy::doorClosed))
+    if (lines.isEmpty()) return
+    val colors = LocalColors.current
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.fdp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.surface, RoundedCornerShape(24.fdp))
+            .padding(vertical = 16.fdp, horizontal = 32.fdp),
+    ) {
+        lines.forEach { Label(it, Tokens.bodyLarge.withWeight(FontWeight.Bold), colors.outside, maxLines = 1) }
+    }
+}
+
 /** Stands in for captions during a turn; they come back on their own when the signal goes off. */
 @Composable
 fun CaptionsHeldCard() {

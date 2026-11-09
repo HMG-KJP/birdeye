@@ -12,6 +12,7 @@ import app.birdeye.core.UiState
 import app.birdeye.ui.component.CaptionCard
 import app.birdeye.ui.component.CaptionsHeldCard
 import app.birdeye.ui.component.ConditionBar
+import app.birdeye.ui.component.DoorStatusCard
 import app.birdeye.ui.component.HistoryRow
 import app.birdeye.ui.component.Label
 import app.birdeye.ui.component.LineIcons
@@ -72,6 +73,7 @@ fun TalkScreen(state: UiState, onePane: Boolean, draft: MutableState<String?>, a
         OnePaneFrame(bandStyle(state)) {
             if (state.parked) TalkNavigation(state, actions)
             state.notice?.let { NoticeBar(it) }
+            DoorStatusCard(state)
             latestCard()
             if (state.parked) {
                 Spacer(Modifier.weight(1f))
@@ -86,6 +88,7 @@ fun TalkScreen(state: UiState, onePane: Boolean, draft: MutableState<String?>, a
     ) {
         TalkNavigation(state, actions)
         state.notice?.let { NoticeBar(it) }
+        DoorStatusCard(state)
         latestCard()
         if (!state.captionsHeld) history.forEach { HistoryRow(it, state.parked) }
         Spacer(Modifier.weight(1f))

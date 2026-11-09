@@ -15,6 +15,7 @@ import app.birdeye.core.AlertKind
 import app.birdeye.core.CaptionLine
 import app.birdeye.core.Copy
 import app.birdeye.core.Direction
+import app.birdeye.core.DoorArea
 import app.birdeye.core.DrivingCondition
 import app.birdeye.core.EntryKind
 import app.birdeye.core.GearPos
@@ -361,6 +362,28 @@ class ScreenSmokeTest {
 
         compose.onNodeWithText("아직 들린 사이렌과 경적이 없어요").assertDoesNotExist()
         compose.onNodeWithText("지금 소리가 끝나면 여기에 남아요").assertIsDisplayed()
+    }
+
+    @Test
+    fun `an open door shows on the map and in words, on every screen`() {
+        show(UiState(gear = GearPos.P, listening = Listening.ACTIVE, openDoors = setOf(DoorArea.REAR_RIGHT)))
+
+        compose.onNodeWithText("오른쪽 뒷문이 열려 있어요").assertIsDisplayed()
+        compose.onNodeWithText("뒷문 열림").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a door that just closed is said in words`() {
+        show(UiState(gear = GearPos.P, listening = Listening.ACTIVE, doorJustClosed = DoorArea.PASSENGER))
+
+        compose.onNodeWithText("조수석 문이 닫혔어요").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the talk screen also says a door is open`() {
+        show(UiState(screen = Screen.TALK, gear = GearPos.P, captions = listOf(line("저기")), openDoors = setOf(DoorArea.DRIVER)))
+
+        compose.onNodeWithText("운전석 문이 열려 있어요").assertIsDisplayed()
     }
 
     @Test
