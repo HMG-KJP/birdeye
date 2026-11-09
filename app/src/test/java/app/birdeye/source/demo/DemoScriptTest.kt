@@ -3,7 +3,6 @@ package app.birdeye.source.demo
 import app.birdeye.core.AppEvent
 import app.birdeye.core.Direction
 import app.birdeye.core.DoorArea
-import app.birdeye.core.EmergencyVehicle
 import app.birdeye.core.FogPosition
 import app.birdeye.core.GearPos
 import app.birdeye.core.LampState
@@ -56,7 +55,6 @@ class DemoScriptTest {
             val sound = it.event as AppEvent.Sound
             assertEquals(SoundKind.SIREN, sound.kind)
             assertEquals(Direction.REAR, sound.direction)
-            assertEquals(EmergencyVehicle.AMBULANCE, sound.vehicle)
             assertEquals(0.82f, sound.confidence, 0.0001f)
             assertEquals(it.t, sound.at)
         }

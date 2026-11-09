@@ -121,7 +121,7 @@ fun IdleCard(listening: Listening, scriptStarted: Boolean, muffled: Boolean, mod
     val failed = listening == Listening.NO_PERMISSION || listening == Listening.MIC_ERROR
     val (headline, detail) = when (listening) {
         Listening.ACTIVE ->
-            if (muffled) Copy.MUFFLED_IDLE to Copy.MUFFLED_IDLE_DETAIL else "조용해요" to "사이렌과 경적이 들리면 바로 알려 드릴게요"
+            if (muffled) Copy.MUFFLED_IDLE to Copy.MUFFLED_IDLE_DETAIL else Copy.IDLE_HEADLINE to Copy.IDLE_DETAIL
         Listening.NOT_STARTED -> "잠시만요" to "소리를 들을 준비를 하고 있어요"
         Listening.NO_PERMISSION -> "소리를 듣지 못하고 있어요" to "마이크 권한을 허용해 주세요"
         Listening.MIC_ERROR -> "소리를 듣지 못하고 있어요" to "마이크를 사용할 수 없어요"
@@ -129,7 +129,7 @@ fun IdleCard(listening: Listening, scriptStarted: Boolean, muffled: Boolean, mod
             if (scriptStarted && muffled) {
                 Copy.MUFFLED_IDLE to Copy.MUFFLED_IDLE_DETAIL
             } else if (scriptStarted) {
-                "조용해요" to "사이렌과 경적이 들리면 바로 알려 드릴게요"
+                Copy.IDLE_HEADLINE to Copy.IDLE_DETAIL
             } else {
                 "시연을 기다리고 있어요" to "설정에서 시연을 시작할 수 있어요"
             }

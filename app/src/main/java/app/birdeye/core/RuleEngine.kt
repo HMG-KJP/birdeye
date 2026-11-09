@@ -7,6 +7,11 @@ import kotlin.math.roundToLong
 /** PoC starting values; tune them during rehearsal. */
 data class RuleConfig(
     val soundThreshold: Float = 0.35f,
+    /** When noise may hide sounds a fainter match is worth telling, in words that admit the doubt. */
+    val soundThresholdMuffled: Float = 0.25f,
+    val soundSureConfidence: Float = 0.6f,
+    /** The car's own screens show doors and warning lamps, so the app repeats them only if asked to. */
+    val vehicleAlerts: Boolean = false,
     val framesToAlert: Int = 3,
     val frameGapMs: Long = 1_500,
     val soundCooldownMs: Long = 10_000,
@@ -36,6 +41,7 @@ data class EngineState(
     val ui: UiState = UiState(),
     internal val streaks: Map<SoundKind, Streak> = emptyMap(),
     internal val activeSound: ActiveSound? = null,
+    internal val alsoHeardUntil: Long? = null,
     internal val lastFiredAt: Map<SoundKind, Long> = emptyMap(),
     internal val ttsEndedAt: Long? = null,
     internal val talkUntil: Long? = null,
@@ -73,7 +79,6 @@ data class EngineState(
     data class ActiveSound(
         val kind: SoundKind,
         val direction: Direction?,
-        val vehicle: EmergencyVehicle?,
         val lastHeardAt: Long,
     )
     data class Fix(val lat: Double, val lng: Double)
@@ -107,7 +112,14 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
 
         val sound = s.activeSound
         if (sound != null && now - sound.lastHeardAt >= config.soundClearMs) {
-            s = logActiveSound(s, effects).copy(activeSound = null).withUi { copy(alert = null) }
+            s = logActiveSound(s, effects)
+                .copy(activeSound = null, alsoHeardUntil = null)
+                .withUi { copy(alert = null, alsoHeard = null) }
+        }
+
+        val alsoHeardUntil = s.alsoHeardUntil
+        if (alsoHeardUntil != null && now >= alsoHeardUntil) {
+            s = s.copy(alsoHeardUntil = null).withUi { copy(alsoHeard = null) }
         }
 
         val trafficUntil = s.trafficUntil
@@ -209,7 +221,8 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
     // F1 ------------------------------------------------------------------------------------------
 
     private fun onSound(state: EngineState, event: AppEvent.Sound, effects: MutableList<Effect>): EngineState {
-        val strong = event.confidence >= config.soundThreshold
+        val threshold = if (state.ui.condition?.muffles == true) config.soundThresholdMuffled else config.soundThreshold
+        val strong = event.confidence >= threshold
         val previous = state.streaks[event.kind]
         val contiguous = previous != null && event.at - previous.lastAt <= config.frameGapMs
         val count = when {
@@ -231,8 +244,10 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
 
         // A siren keeps the card, but the driver can still find the horn in the recap later.
         if (active?.kind == SoundKind.SIREN) {
+            val beside = soundAlert(event)
             return log(
-                s.copy(lastFiredAt = s.lastFiredAt + (event.kind to event.at)),
+                s.copy(lastFiredAt = s.lastFiredAt + (event.kind to event.at), alsoHeardUntil = event.at + config.noticeHoldMs)
+                    .withUi { copy(alsoHeard = beside) },
                 EntryKind.HORN,
                 event.at,
                 Copy.HORN_DURING_SIREN,
@@ -243,27 +258,28 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         return fireSound(logActiveSound(s, effects), event, effects)
     }
 
-    private fun fireSound(state: EngineState, event: AppEvent.Sound, effects: MutableList<Effect>): EngineState {
-        val rhythm = when (event.kind) {
+    private fun soundAlert(event: AppEvent.Sound) = Alert(
+        kind = when (event.kind) {
+            SoundKind.SIREN -> AlertKind.SIREN
+            SoundKind.HORN -> AlertKind.HORN
+        },
+        eyebrow = Copy.soundEyebrow(event.kind, event.direction),
+        headline = Copy.soundHeadline(event.kind, event.direction, sure = event.confidence >= config.soundSureConfidence),
+        guidance = Copy.soundGuidance(event.direction),
+        rhythm = when (event.kind) {
             SoundKind.SIREN -> LightRhythm.SIREN
             SoundKind.HORN -> LightRhythm.HORN
-        }
-        effects += Effect.Light(rhythm)
-        val alert = Alert(
-            kind = when (event.kind) {
-                SoundKind.SIREN -> AlertKind.SIREN
-                SoundKind.HORN -> AlertKind.HORN
-            },
-            eyebrow = Copy.soundEyebrow(event.kind, event.direction),
-            headline = Copy.soundHeadline(event.kind, event.vehicle),
-            guidance = Copy.soundGuidance(event.kind, event.direction),
-            rhythm = rhythm,
-            direction = event.direction,
-            firedAt = event.at,
-        )
+        },
+        direction = event.direction,
+        firedAt = event.at,
+    )
+
+    private fun fireSound(state: EngineState, event: AppEvent.Sound, effects: MutableList<Effect>): EngineState {
+        val alert = soundAlert(event)
+        effects += Effect.Light(alert.rhythm)
         return state
             .copy(
-                activeSound = EngineState.ActiveSound(event.kind, event.direction, event.vehicle, event.at),
+                activeSound = EngineState.ActiveSound(event.kind, event.direction, event.at),
                 lastFiredAt = state.lastFiredAt + (event.kind to event.at),
             )
             .withUi { copy(alert = alert) }
@@ -277,7 +293,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             SoundKind.SIREN -> EntryKind.SIREN
             SoundKind.HORN -> EntryKind.HORN
         }
-        val text = Copy.soundLog(sound.kind, sound.direction, sound.vehicle, seconds)
+        val text = Copy.soundLog(sound.kind, sound.direction, seconds)
         return log(state, kind, alert.firedAt, text, effects)
     }
 
@@ -438,6 +454,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
 
     /** Lighting up the cabin in the middle of a swerve would only distract, so this waits for it to end. */
     private fun evaluateSwerve(state: EngineState, now: Long, effects: MutableList<Effect>): EngineState {
+        if (!config.vehicleAlerts) return state
         val lastSteerAt = state.lastSteerAt
         if (!state.swervePending || lastSteerAt == null || now - lastSteerAt < config.swerveSettleMs) return state
         val settled = state.copy(swervePending = false)
@@ -454,6 +471,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
     }
 
     private fun evaluateDoors(state: EngineState, now: Long, effects: MutableList<Effect>): EngineState {
+        if (!config.vehicleAlerts) return state
         val drivingWithDoorOpen = state.ui.gear == GearPos.D && state.openDoors.isNotEmpty()
         return when {
             !drivingWithDoorOpen ->
@@ -479,6 +497,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
     private fun onLamp(state: EngineState, event: AppEvent.Telltale, effects: MutableList<Effect>): EngineState {
         val previous = state.lamps[event.name] ?: LampState.OFF
         val s = state.copy(lamps = state.lamps + (event.name to event.state))
+        if (!config.vehicleAlerts) return s
         if (event.state == LampState.OFF) {
             return s.clearNoticeFrom(EngineState.NoticeSource.Lamp(event.name))
         }
@@ -637,8 +656,9 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             state.talkPinned || state.talkUntil != null -> Screen.TALK
             else -> Screen.MAIN
         }
+        val aboutToTurn = state.ui.gear == GearPos.D && state.ui.turnSignal != SignalState.OFF && !state.signalNotified
         return state.withUi {
-            copy(screen = screen, outside = if (window) outside else null)
+            copy(screen = screen, outside = if (window) outside else null, captionsHeld = aboutToTurn)
         }
     }
 

@@ -10,6 +10,7 @@ import app.birdeye.core.Seat
 import app.birdeye.core.Speaker
 import app.birdeye.core.UiState
 import app.birdeye.ui.component.CaptionCard
+import app.birdeye.ui.component.CaptionsHeldCard
 import app.birdeye.ui.component.ConditionBar
 import app.birdeye.ui.component.HistoryRow
 import app.birdeye.ui.component.Label
@@ -18,7 +19,7 @@ import app.birdeye.ui.component.NoticeBar
 import app.birdeye.ui.component.OnePaneFrame
 import app.birdeye.ui.component.PageNavigation
 import app.birdeye.ui.component.ReplyButtons
-import app.birdeye.ui.component.SeatMap
+import app.birdeye.ui.component.MapPane
 import app.birdeye.ui.component.SegmentedTabs
 import app.birdeye.ui.component.TwoPaneFrame
 import app.birdeye.ui.component.bandStyle
@@ -58,7 +59,9 @@ private fun WaitingForSpeech() {
 fun TalkScreen(state: UiState, onePane: Boolean, draft: MutableState<String?>, actions: UiActions) {
     val (latest, history) = splitConversation(state.captions)
     val latestCard = @Composable {
-        if (latest != null) {
+        if (latest != null && state.captionsHeld) {
+            CaptionsHeldCard()
+        } else if (latest != null) {
             CaptionCard(latest, state.parked, fresh = latest == state.recentCaption)
         } else {
             WaitingForSpeech()
@@ -79,12 +82,12 @@ fun TalkScreen(state: UiState, onePane: Boolean, draft: MutableState<String?>, a
     }
     TwoPaneFrame(
         band = bandStyle(state),
-        side = { SeatMap(state.activeSeat) },
+        side = { MapPane(state, sounds = emptyList(), seat = state.activeSeat) },
     ) {
         TalkNavigation(state, actions)
         state.notice?.let { NoticeBar(it) }
         latestCard()
-        history.forEach { HistoryRow(it, state.parked) }
+        if (!state.captionsHeld) history.forEach { HistoryRow(it, state.parked) }
         Spacer(Modifier.weight(1f))
         ReplyButtons(state.replies, state.parked, state.replying, draft, actions.onReply)
     }

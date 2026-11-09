@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import app.birdeye.core.Copy
+import app.birdeye.core.Direction
 import app.birdeye.core.Speaker
 import app.birdeye.core.UiState
 import app.birdeye.ui.component.BasicButton
@@ -23,6 +24,8 @@ import app.birdeye.ui.component.Label
 import app.birdeye.ui.component.LineIcon
 import app.birdeye.ui.component.LineIcons
 import app.birdeye.ui.component.NoticeBar
+import app.birdeye.ui.component.MapPane
+import app.birdeye.ui.component.MapSound
 import app.birdeye.ui.component.OnePaneFrame
 import app.birdeye.ui.component.PageNavigation
 import app.birdeye.ui.component.TwoPaneFrame
@@ -120,6 +123,7 @@ fun WindowScreen(state: UiState, onePane: Boolean, actions: UiActions) {
     TwoPaneFrame(
         band = bandStyle(state),
         side = {
+            MapPane(state, listOf(MapSound(Direction.LEFT, colors.outside, "창밖")), windowOpen = true)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.fdp),

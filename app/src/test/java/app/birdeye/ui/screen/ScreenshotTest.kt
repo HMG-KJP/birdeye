@@ -55,7 +55,7 @@ private val recapState = UiState(
         endedAt = 48 * 60_000L,
         distanceMeters = 21_000.0,
         entries = listOf(
-            TripEntry(EntryKind.SIREN, 0, "뒤쪽에서 구급차 사이렌 · 약 20초", "테헤란로"),
+            TripEntry(EntryKind.SIREN, 0, "뒤쪽에서 사이렌 · 약 20초", "테헤란로"),
             TripEntry(EntryKind.HORN, 0, "왼쪽에서 경적 · 약 2초", "역삼역 사거리"),
             TripEntry(EntryKind.VEHICLE, 0, "방향지시등이 오래 켜져 있었어요", "강남대로"),
             TripEntry(EntryKind.TALK, 0, "조수석: \"휴대폰 두고 내린 것 같아\"", "강남대로"),

@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class F5VehicleSoundRulesTest {
-    private fun driving() = EngineHarness().gear(GearPos.D)
+    private fun driving() = EngineHarness(RuleConfig(vehicleAlerts = true)).gear(GearPos.D)
     private fun signal(state: SignalState, at: Long) = AppEvent.TurnSignal(state, at)
     private fun steering(angle: Float, at: Long) = AppEvent.Steering(angle, at)
     private fun door(open: Boolean, at: Long, area: DoorArea = DoorArea.DRIVER) = AppEvent.DoorOpen(area, open, at)
@@ -28,7 +28,7 @@ class F5VehicleSoundRulesTest {
 
     @Test
     fun `the screen learns of a turn signal in any gear, because the system camera opens with it`() {
-        val h = EngineHarness().send(signal(SignalState.RIGHT, at = 0))
+        val h = EngineHarness(RuleConfig(vehicleAlerts = true)).send(signal(SignalState.RIGHT, at = 0))
 
         assertEquals(SignalState.RIGHT, h.ui.turnSignal)
         assertTrue(h.ui.systemCameraUp)
@@ -85,7 +85,7 @@ class F5VehicleSoundRulesTest {
 
     @Test
     fun `a swing only counts in drive`() {
-        val h = EngineHarness().gear(GearPos.R).send(steering(0f, at = 0)).send(steering(300f, at = 100))
+        val h = EngineHarness(RuleConfig(vehicleAlerts = true)).gear(GearPos.R).send(steering(0f, at = 0)).send(steering(300f, at = 100))
 
         assertNull(h.tick(5_000).ui.notice)
     }
@@ -167,7 +167,7 @@ class F5VehicleSoundRulesTest {
 
     @Test
     fun `turn signal outside of drive does not count`() {
-        val h = EngineHarness().send(signal(SignalState.LEFT, at = 0))
+        val h = EngineHarness(RuleConfig(vehicleAlerts = true)).send(signal(SignalState.LEFT, at = 0))
 
         assertNull(h.tick(60_000).ui.notice)
     }
@@ -194,7 +194,7 @@ class F5VehicleSoundRulesTest {
 
     @Test
     fun `an open door in park is fine until the car goes into drive`() {
-        val h = EngineHarness().send(door(open = true, at = 5))
+        val h = EngineHarness(RuleConfig(vehicleAlerts = true)).send(door(open = true, at = 5))
         assertNull(h.ui.notice)
 
         h.gear(GearPos.D, at = 10)
@@ -255,5 +255,27 @@ class F5VehicleSoundRulesTest {
             .send(lamp("안전벨트", LampState.ON, at = 2))
 
         assertEquals(Screen.TALK, h.ui.screen)
+    }
+
+    @Test
+    fun `what the car's own screens already show stays out of the app unless switched on`() {
+        val h = EngineHarness().gear(GearPos.D)
+            .send(door(true, at = 1))
+            .send(lamp("안전벨트", LampState.ON, at = 2))
+            .send(steering(0f, at = 3))
+            .send(steering(120f, at = 100))
+        h.tick(2_000)
+
+        assertNull(h.ui.notice)
+        assertTrue(h.lightEffects().isEmpty())
+        assertTrue(h.ui.trip.entries.isEmpty())
+    }
+
+    @Test
+    fun `a signal left on still gets its notice, because only its click would have told the driver`() {
+        val h = EngineHarness().gear(GearPos.D).send(signal(SignalState.LEFT, at = 1000))
+        h.tick(21_000)
+
+        assertEquals("방향지시등이 켜져 있어요", h.ui.notice?.headline)
     }
 }

@@ -28,54 +28,6 @@ import app.birdeye.ui.theme.Tokens
 import app.birdeye.ui.theme.fdp
 
 @Composable
-fun SeatMap(activeSeat: Seat?) {
-    val colors = LocalColors.current
-    Column(
-        verticalArrangement = Arrangement.spacedBy(16.fdp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(colors.surface, RoundedCornerShape(24.fdp))
-            .padding(20.fdp),
-    ) {
-        Label("말한 사람 위치", Tokens.bodySmall, colors.textTertiary)
-        Column(verticalArrangement = Arrangement.spacedBy(10.fdp)) {
-            SeatRow(Seat.DRIVER, Seat.PASSENGER, activeSeat)
-            SeatRow(Seat.REAR_LEFT, Seat.REAR_RIGHT, activeSeat)
-        }
-    }
-}
-
-@Composable
-private fun SeatRow(left: Seat, right: Seat, activeSeat: Seat?) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.fdp), modifier = Modifier.fillMaxWidth()) {
-        SeatCell(left, left == activeSeat, Modifier.weight(1f))
-        SeatCell(right, right == activeSeat, Modifier.weight(1f))
-    }
-}
-
-/** Seat names wrap onto two lines so they stay at a readable size in the narrow pane. */
-@Composable
-private fun SeatCell(seat: Seat, active: Boolean, modifier: Modifier) {
-    val colors = LocalColors.current
-    val shape = RoundedCornerShape(16.fdp)
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .height(104.fdp)
-            .background(if (active) colors.seatActive else colors.surfaceHigh, shape)
-            .let { if (active) it.border(3.dp, colors.talk, shape) else it }
-            .padding(horizontal = 8.fdp),
-    ) {
-        Label(
-            seat.label,
-            if (active) Tokens.bodySmall.withWeight(FontWeight.Bold) else Tokens.bodySmall,
-            color = if (active) colors.textPrimary else colors.textSecondary,
-            maxLines = 2,
-        )
-    }
-}
-
-@Composable
 fun HistoryRow(line: CaptionLine, parked: Boolean) {
     val colors = LocalColors.current
     Row(

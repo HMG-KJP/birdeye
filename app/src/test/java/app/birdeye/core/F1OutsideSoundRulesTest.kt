@@ -43,30 +43,53 @@ class F1OutsideSoundRulesTest {
     }
 
     @Test
-    fun `siren from behind asks the driver to move right`() {
-        val alert = driving()
-            .frames(SoundKind.SIREN, from = 0, direction = Direction.REAR, vehicle = EmergencyVehicle.AMBULANCE)
-            .ui.alert
+    fun `a siren is told as what was heard, without naming the vehicle or giving orders`() {
+        val alert = driving().frames(SoundKind.SIREN, from = 0, direction = Direction.REAR).ui.alert
 
-        assertEquals("사이렌 감지 · 뒤쪽에서 접근 중", alert?.eyebrow)
-        assertEquals("구급차가 다가와요", alert?.headline)
-        assertEquals("오른쪽 차로로 비켜 주세요", alert?.guidance)
+        assertEquals("사이렌 감지 · 뒤쪽", alert?.eyebrow)
+        assertEquals("뒤쪽에서 사이렌이 들려요", alert?.headline)
+        assertEquals("주변을 확인해 주세요", alert?.guidance)
     }
 
     @Test
-    fun `siren from the front asks the driver to slow down`() {
-        val alert = driving().frames(SoundKind.SIREN, from = 0, direction = Direction.FRONT).ui.alert
-
-        assertEquals("속도를 줄이고 주변을 확인하세요", alert?.guidance)
-    }
-
-    @Test
-    fun `siren of unknown type and direction still gives safe guidance`() {
+    fun `an unknown direction is said to be unknown, never guessed`() {
         val alert = driving().frames(SoundKind.SIREN, from = 0, direction = null).ui.alert
 
-        assertEquals("사이렌 감지", alert?.eyebrow)
-        assertEquals("긴급차량이 가까이 있어요", alert?.headline)
-        assertEquals("속도를 줄이고 주변을 확인하세요", alert?.guidance)
+        assertEquals("사이렌 감지 · 방향 모름", alert?.eyebrow)
+        assertEquals("사이렌이 들려요", alert?.headline)
+        assertEquals("어느 쪽인지는 알 수 없어요. 주변을 확인해 주세요", alert?.guidance)
+    }
+
+    @Test
+    fun `a weak match is told as a likeness, not as a fact`() {
+        val siren = driving().frames(SoundKind.SIREN, from = 0, direction = Direction.REAR, confidence = 0.4f).ui.alert
+        val horn = driving().frames(SoundKind.HORN, from = 0, direction = null, confidence = 0.4f).ui.alert
+
+        assertEquals("뒤쪽에서 사이렌 같은 소리가 들려요", siren?.headline)
+        assertEquals("경적 같은 소리가 들렸어요", horn?.headline)
+    }
+
+    @Test
+    fun `when rain may hide sounds, fainter ones are told too`() {
+        val clear = driving().frames(SoundKind.SIREN, from = 0, confidence = 0.28f)
+        assertNull(clear.ui.alert)
+
+        val rainy = driving().send(AppEvent.Wiper(on = true, at = 0)).frames(SoundKind.SIREN, from = 0, confidence = 0.28f)
+        assertEquals("뒤쪽에서 사이렌 같은 소리가 들려요", rainy.ui.alert?.headline)
+    }
+
+    @Test
+    fun `a horn during a siren stays on screen beside it for a moment`() {
+        val h = driving()
+            .frames(SoundKind.SIREN, from = 0, count = 12, direction = Direction.REAR)
+            .frames(SoundKind.HORN, from = 2000, direction = Direction.LEFT)
+
+        assertEquals("뒤쪽에서 사이렌이 들려요", h.ui.alert?.headline)
+        assertEquals("왼쪽에서 경적이 울렸어요", h.ui.alsoHeard?.headline)
+        assertEquals(Direction.LEFT, h.ui.alsoHeard?.direction)
+
+        h.tick(3_000 + 8_000)
+        assertNull(h.ui.alsoHeard)
     }
 
     @Test
@@ -74,7 +97,7 @@ class F1OutsideSoundRulesTest {
         val h = driving().frames(SoundKind.HORN, from = 0, direction = Direction.LEFT)
 
         assertEquals(AlertKind.HORN, h.ui.alert?.kind)
-        assertEquals("주변 차량을 확인하세요", h.ui.alert?.guidance)
+        assertEquals("주변을 확인해 주세요", h.ui.alert?.guidance)
         assertEquals(listOf(LightRhythm.HORN), h.lightEffects())
     }
 
@@ -154,13 +177,12 @@ class F1OutsideSoundRulesTest {
             from = 0,
             count = 40,
             direction = Direction.REAR,
-            vehicle = EmergencyVehicle.AMBULANCE,
         ) // fires at 1000, last heard at 19500
         h.tick(23500)
 
         val entry = h.ui.trip.entries.single()
         assertEquals(EntryKind.SIREN, entry.kind)
         assertEquals(1000L, entry.at)
-        assertEquals("뒤쪽에서 구급차 사이렌 · 약 19초", entry.text)
+        assertEquals("뒤쪽에서 사이렌 · 약 19초", entry.text)
     }
 }

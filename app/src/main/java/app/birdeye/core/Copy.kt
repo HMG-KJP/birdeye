@@ -20,8 +20,14 @@ object Copy {
     const val SWERVE = "핸들을 급하게 꺾었어요"
     const val SWERVE_GUIDANCE = "주변 차량을 확인하세요"
     const val SWERVE_LOG = "핸들을 급하게 꺾었어요"
-    const val MUFFLED_IDLE = "조용한지 확실하지 않아요"
-    const val MUFFLED_IDLE_DETAIL = "사이렌과 경적을 놓칠 수 있으니 주변을 더 살펴 주세요"
+    const val CHECK_AROUND = "주변을 확인해 주세요"
+    const val UNKNOWN_SIDE = "방향 모름"
+    const val IDLE_HEADLINE = "사이렌과 경적은 들리지 않아요"
+    const val IDLE_DETAIL = "소리가 들리면 바로 알려 드릴게요"
+    const val MUFFLED_IDLE = "소리를 놓칠 수 있어요"
+    const val MUFFLED_IDLE_DETAIL = "사이렌과 경적이 작게 들릴 수 있으니 주변을 더 살펴 주세요"
+    const val CAPTIONS_HELD = "회전 중이라 자막을 잠시 줄였어요"
+    const val CAPTIONS_HELD_DETAIL = "사이렌과 경적은 그대로 바로 알려 드려요"
 
     private fun sideName(side: Direction) = when (side) {
         Direction.FRONT -> "앞쪽"
@@ -48,11 +54,11 @@ object Copy {
     }
 
     fun conditionText(condition: DrivingCondition): String = when (condition) {
-        DrivingCondition.THUNDER -> "천둥이 치고 있어요 · 소리 감지가 약할 수 있어요"
-        DrivingCondition.RAIN -> "빗소리가 커요 · 소리 감지가 약할 수 있어요"
-        DrivingCondition.WIPER -> "와이퍼가 움직여요 · 소리 감지가 약할 수 있어요"
-        DrivingCondition.FOG -> "안개등이 켜져 있어요 · 시야가 좁을 수 있어요"
-        DrivingCondition.WIND -> "바람 소리가 커요 · 소리 감지가 약할 수 있어요"
+        DrivingCondition.THUNDER -> "천둥소리가 커서 소리를 놓칠 수 있어요"
+        DrivingCondition.RAIN -> "빗소리가 커서 소리를 놓칠 수 있어요"
+        DrivingCondition.WIPER -> "와이퍼 소리로 소리를 놓칠 수 있어요"
+        DrivingCondition.FOG -> "안개등이 켜져 있어요. 시야가 좁을 수 있어요"
+        DrivingCondition.WIND -> "바람 소리가 커서 소리를 놓칠 수 있어요"
     }
 
     /** Warning lamps come from public Safety and Seat APIs and are named here. */
@@ -64,58 +70,49 @@ object Copy {
         else -> null
     }
 
+    /** Says what was heard. It names no vehicle and gives no orders: a wrong guess here could mislead. */
     fun soundEyebrow(kind: SoundKind, direction: Direction?): String {
         val base = when (kind) {
             SoundKind.SIREN -> "사이렌 감지"
             SoundKind.HORN -> "경적 감지"
         }
-        val where = when (direction) {
-            Direction.FRONT -> "앞쪽에서"
-            Direction.REAR -> "뒤쪽에서"
-            Direction.LEFT -> "왼쪽에서"
-            Direction.RIGHT -> "오른쪽에서"
-            null -> return base
-        }
-        return when (kind) {
-            SoundKind.SIREN -> "$base · $where 접근 중"
-            SoundKind.HORN -> "$base · $where 들려요"
+        return "$base · ${direction?.let(::sideName) ?: UNKNOWN_SIDE}"
+    }
+
+    fun soundHeadline(kind: SoundKind, direction: Direction?, sure: Boolean = true): String {
+        val where = direction?.let { "${sideName(it)}에서 " }.orEmpty()
+        return where + when (kind) {
+            SoundKind.SIREN -> if (sure) "사이렌이 들려요" else "사이렌 같은 소리가 들려요"
+            SoundKind.HORN -> if (sure) "경적이 울렸어요" else "경적 같은 소리가 들렸어요"
         }
     }
 
-    fun soundHeadline(kind: SoundKind, vehicle: EmergencyVehicle?): String = when (kind) {
-        SoundKind.HORN -> "경적이 울렸어요"
-        SoundKind.SIREN -> when (vehicle) {
-            EmergencyVehicle.AMBULANCE -> "구급차가 다가와요"
-            EmergencyVehicle.POLICE -> "경찰차가 다가와요"
-            EmergencyVehicle.FIRE -> "소방차가 다가와요"
-            null -> "긴급차량이 가까이 있어요"
-        }
-    }
+    fun soundGuidance(direction: Direction?): String =
+        if (direction == null) "어느 쪽인지는 알 수 없어요. $CHECK_AROUND" else CHECK_AROUND
 
-    fun soundGuidance(kind: SoundKind, direction: Direction?): String = when {
-        kind == SoundKind.HORN -> "주변 차량을 확인하세요"
-        direction == Direction.REAR -> "오른쪽 차로로 비켜 주세요"
-        else -> "속도를 줄이고 주변을 확인하세요"
-    }
-
-    fun soundLog(kind: SoundKind, direction: Direction?, vehicle: EmergencyVehicle?, seconds: Long): String {
-        val where = when (direction) {
-            Direction.FRONT -> "앞쪽에서 "
-            Direction.REAR -> "뒤쪽에서 "
-            Direction.LEFT -> "왼쪽에서 "
-            Direction.RIGHT -> "오른쪽에서 "
-            null -> ""
-        }
+    fun soundLog(kind: SoundKind, direction: Direction?, seconds: Long): String {
+        val where = direction?.let { "${sideName(it)}에서 " }.orEmpty()
         val what = when (kind) {
             SoundKind.HORN -> "경적"
-            SoundKind.SIREN -> when (vehicle) {
-                EmergencyVehicle.AMBULANCE -> "구급차 사이렌"
-                EmergencyVehicle.POLICE -> "경찰차 사이렌"
-                EmergencyVehicle.FIRE -> "소방차 사이렌"
-                null -> "사이렌"
-            }
+            SoundKind.SIREN -> "사이렌"
         }
         return "$where$what · 약 ${seconds}초"
+    }
+
+    /** How well the app can hear right now, in the words the driver sees on the map pane. */
+    fun hearingStatus(listening: Listening, condition: DrivingCondition?): String = when (listening) {
+        Listening.NO_PERMISSION, Listening.MIC_ERROR -> "꺼짐"
+        Listening.NOT_STARTED -> "준비 중"
+        Listening.ACTIVE, Listening.DEMO ->
+            if (condition?.muffles == true) "약함 · ${noiseName(condition)}" else "좋음"
+    }
+
+    private fun noiseName(condition: DrivingCondition) = when (condition) {
+        DrivingCondition.THUNDER -> "천둥소리"
+        DrivingCondition.RAIN -> "빗소리"
+        DrivingCondition.WIPER -> "와이퍼 소리"
+        DrivingCondition.WIND -> "바람 소리"
+        DrivingCondition.FOG -> "안개"
     }
 
     fun listeningSubtitle(listening: Listening): String = when (listening) {
@@ -127,7 +124,7 @@ object Copy {
 
     /** One line explaining a rhythm, shown next to its dots on the main screen. */
     fun rhythmLegend(rhythm: LightRhythm): String = when (rhythm) {
-        LightRhythm.SIREN -> "빠른 3회 점멸 = 긴급차량"
+        LightRhythm.SIREN -> "빠른 3회 점멸 = 사이렌"
         LightRhythm.TRAFFIC -> "빠른 2회 점멸 = 주변 차량"
         LightRhythm.HORN -> "강한 1회 = 경적"
         LightRhythm.PASSENGER -> "부드러운 1회 = 승객의 말"

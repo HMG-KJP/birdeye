@@ -70,34 +70,43 @@ class DemoScenarioTest {
     }
 
     @Test
-    fun `driving alone covers every warning but no conversation`() {
+    fun `driving alone covers what only sound can tell, and no conversation`() {
         val timeline = replay(script = solo)
         val counts = timeline.last().trip.counts()
 
-        assertEquals(1, counts[EntryKind.SIREN])
-        assertEquals(1, counts[EntryKind.HORN])
-        assertEquals(2, counts[EntryKind.VEHICLE])
+        assertEquals(3, counts[EntryKind.SIREN])
+        assertEquals(2, counts[EntryKind.HORN])
         assertEquals(2, counts[EntryKind.OUTSIDE])
-        assertEquals(2, counts[EntryKind.TRAFFIC])
         assertEquals(0, counts[EntryKind.TALK])
         assertEquals(GearPos.P, timeline.last().gear)
         assertTrue(timeline.none { it.screen == Screen.TALK })
     }
 
     @Test
-    fun `driving alone shows the swerve notice and says rain may hide sounds`() {
+    fun `driving alone shows two sounds together, a doubtful sound with no direction, and rain`() {
         val timeline = replay(script = solo)
 
-        assertTrue(timeline.any { it.notice?.headline == Copy.SWERVE })
+        assertTrue(timeline.any { it.alert?.kind == AlertKind.SIREN && it.alsoHeard != null })
+        assertTrue(timeline.any { it.alert?.headline == "사이렌 같은 소리가 들려요" && it.alert?.direction == null })
         assertTrue(timeline.any { it.condition == DrivingCondition.RAIN && it.alert == null })
     }
 
     @Test
-    fun `with a passenger a warning and the weather also reach the conversation`() {
+    fun `with a passenger the weather also reaches the conversation`() {
         val timeline = replay()
 
-        assertTrue(timeline.any { it.alert?.kind == AlertKind.TRAFFIC })
         assertTrue(timeline.any { it.screen == Screen.TALK && it.alert == null && it.condition != null })
+    }
+
+    @Test
+    fun `neither demo repeats what the car's own screens already show`() {
+        listOf(json, solo).forEach { script ->
+            val timeline = replay(script = script)
+
+            assertTrue(timeline.none { it.alert?.kind == AlertKind.TRAFFIC })
+            assertTrue(timeline.none { it.notice?.headline == Copy.DOOR_OPEN || it.notice?.headline == Copy.SWERVE })
+            assertEquals(0, timeline.last().trip.counts()[EntryKind.TRAFFIC])
+        }
     }
 
     @Test

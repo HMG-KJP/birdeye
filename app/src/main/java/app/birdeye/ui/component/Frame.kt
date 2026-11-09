@@ -1,7 +1,6 @@
 package app.birdeye.ui.component
 
 import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -30,12 +29,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -43,14 +37,12 @@ import androidx.compose.ui.unit.dp
 import app.birdeye.core.Alert
 import app.birdeye.core.AlertKind
 import app.birdeye.core.Copy
-import app.birdeye.core.Direction
 import app.birdeye.core.DrivingCondition
 import app.birdeye.core.LightRhythm
 import app.birdeye.core.Screen
 import app.birdeye.core.UiState
 import app.birdeye.ui.theme.ColorTokens
 import app.birdeye.ui.theme.LocalColors
-import app.birdeye.ui.theme.LocalFormFactor
 import app.birdeye.ui.theme.Tokens
 import app.birdeye.ui.theme.fdp
 import app.birdeye.ui.theme.dp as tokenDp
@@ -106,6 +98,7 @@ private val LocalNavigationMinHeight = staticCompositionLocalOf { 0.dp }
 fun TwoPaneFrame(
     band: BandStyle?,
     side: @Composable ColumnScope.() -> Unit,
+    sideShare: Float = Tokens.SIDE_PANE_SHARE,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalColors.current
@@ -117,7 +110,7 @@ fun TwoPaneFrame(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(24.fdp),
                     modifier = Modifier
-                        .width(Tokens.SIDE_PANE_WIDTH.fdp)
+                        .weight(sideShare)
                         .fillMaxHeight()
                         .padding(vertical = 32.fdp, horizontal = Tokens.windowPadding.tokenDp),
                     content = side,
@@ -128,7 +121,7 @@ fun TwoPaneFrame(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(24.fdp),
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(if (camera == 0.dp) 1f - sideShare else 1f)
                         .fillMaxHeight()
                         .padding(vertical = topPadding, horizontal = Tokens.windowPadding.tokenDp),
                     content = content,
@@ -318,71 +311,5 @@ fun ConditionBar(condition: DrivingCondition) {
     ) {
         LineIcon(LineIcons.weather, colors.textSecondary, 36.fdp)
         Label(Copy.conditionText(condition), Tokens.bodySmall.withWeight(FontWeight.Bold), maxLines = 2)
-    }
-}
-
-/** The car seen from above; arcs on the side the sound comes from. */
-@Composable
-fun CarDirectionDiagram(direction: Direction?, showArcs: Boolean, color: Color) {
-    val colors = LocalColors.current
-    val unit = LocalFormFactor.current.scale * 1.2f
-    Canvas(Modifier.fillMaxWidth().height(290.fdp)) {
-        fun u(value: Int): Float = (value * unit).dp.toPx()
-        val cx = size.width / 2
-        val cy = size.height / 2
-        if (showArcs) {
-            val degrees = when (direction) {
-                Direction.REAR -> 0f
-                Direction.LEFT -> 90f
-                Direction.FRONT -> 180f
-                Direction.RIGHT -> 270f
-                null -> null
-            }
-            if (degrees != null) {
-                rotate(degrees, Offset(cx, cy)) {
-                    val outer = u(110)
-                    drawArc(
-                        color = color,
-                        startAngle = 0f,
-                        sweepAngle = 180f,
-                        useCenter = false,
-                        topLeft = Offset(cx - outer, cy + u(15) - outer),
-                        size = Size(outer * 2, outer * 2),
-                        style = Stroke(u(3)),
-                    )
-                    val rx = u(75)
-                    val ry = u(70)
-                    drawArc(
-                        color = color,
-                        startAngle = 0f,
-                        sweepAngle = 180f,
-                        useCenter = false,
-                        topLeft = Offset(cx - rx, cy + u(37) - ry),
-                        size = Size(rx * 2, ry * 2),
-                        style = Stroke(u(2)),
-                    )
-                }
-            } else {
-                drawCircle(color, u(110), Offset(cx, cy), style = Stroke(u(3)))
-            }
-        }
-        val carW = u(70)
-        val carH = u(140)
-        val carTop = Offset(cx - carW / 2, cy - carH / 2)
-        drawRoundRect(colors.surfaceHigh, carTop, Size(carW, carH), CornerRadius(u(24)))
-        drawRoundRect(colors.carLine, carTop, Size(carW, carH), CornerRadius(u(24)), style = Stroke(u(2)))
-        val glassInset = u(10)
-        drawRoundRect(
-            colors.carGlass,
-            Offset(carTop.x + glassInset, carTop.y + u(22)),
-            Size(carW - glassInset * 2, u(30)),
-            CornerRadius(u(8)),
-        )
-        drawRoundRect(
-            colors.carGlass,
-            Offset(carTop.x + glassInset, carTop.y + carH - u(40)),
-            Size(carW - glassInset * 2, u(22)),
-            CornerRadius(u(6)),
-        )
     }
 }

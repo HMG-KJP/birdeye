@@ -32,11 +32,10 @@ class EngineHarness(config: RuleConfig = RuleConfig()) {
         count: Int = 3,
         confidence: Float = 0.8f,
         direction: Direction? = Direction.REAR,
-        vehicle: EmergencyVehicle? = null,
         stepMs: Long = 500L,
     ) = apply {
         repeat(count) { i ->
-            send(AppEvent.Sound(kind, direction, confidence, at = from + i * stepMs, vehicle = vehicle))
+            send(AppEvent.Sound(kind, direction, confidence, at = from + i * stepMs))
         }
     }
 

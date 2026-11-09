@@ -54,15 +54,6 @@ class SoundFrameMapperTest {
     }
 
     @Test
-    fun `the classifier never names the vehicle, because its fine labels are not reliable`() {
-        val ambulance = SoundFrameMapper.map(listOf("Ambulance (siren)" to 0.9f), at = 0)
-        val police = SoundFrameMapper.map(listOf("Police car (siren)" to 0.9f), at = 0)
-
-        assertNull(sound(ambulance, SoundKind.SIREN).vehicle)
-        assertNull(sound(police, SoundKind.SIREN).vehicle)
-    }
-
-    @Test
     fun `rain labels combine into one rain score`() {
         val noise = SoundFrameMapper.mapNoise(listOf("Rain" to 0.5f, "Raindrop" to 0.5f), at = 7)
 

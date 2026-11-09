@@ -5,6 +5,23 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class F2F3TalkRulesTest {
+    @Test
+    fun `captions hold back while the driver is about to turn, then return`() {
+        val h = EngineHarness().gear(GearPos.D).send(AppEvent.TurnSignal(SignalState.LEFT, at = 1000))
+        assertEquals(true, h.ui.captionsHeld)
+
+        h.send(AppEvent.TurnSignal(SignalState.OFF, at = 2000))
+        assertEquals(false, h.ui.captionsHeld)
+    }
+
+    @Test
+    fun `a signal forgotten on does not hide captions for the rest of the trip`() {
+        val h = EngineHarness().gear(GearPos.D).send(AppEvent.TurnSignal(SignalState.LEFT, at = 1000))
+        h.tick(21_000)
+
+        assertEquals(false, h.ui.captionsHeld)
+    }
+
     private fun driving() = EngineHarness().gear(GearPos.D)
     private fun caption(text: String, at: Long, seat: Seat? = Seat.PASSENGER, isFinal: Boolean = true) =
         AppEvent.Caption(seat, text, isFinal, at)

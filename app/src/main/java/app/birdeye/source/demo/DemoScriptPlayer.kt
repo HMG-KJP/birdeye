@@ -3,7 +3,6 @@ package app.birdeye.source.demo
 import app.birdeye.core.AppEvent
 import app.birdeye.core.Direction
 import app.birdeye.core.DoorArea
-import app.birdeye.core.EmergencyVehicle
 import app.birdeye.core.FogPosition
 import app.birdeye.core.GearPos
 import app.birdeye.core.LampState
@@ -89,11 +88,10 @@ object DemoScript {
         val duration = item["durationMs"]?.asLong ?: DEFAULT_SOUND_MS
         val kind = SoundKind.valueOf(item["kind"].asString)
         val direction = item["direction"]?.asString?.let(Direction::valueOf)
-        val vehicle = item["vehicle"]?.asString?.let(EmergencyVehicle::valueOf)
         val confidence = item["confidence"].asFloat
         return (0 until duration step FRAME_MS).map { offset ->
             val frameT = t + offset
-            TimedEvent(frameT, AppEvent.Sound(kind, direction, confidence, startAt + frameT, vehicle))
+            TimedEvent(frameT, AppEvent.Sound(kind, direction, confidence, startAt + frameT))
         }
     }
 }

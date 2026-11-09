@@ -74,6 +74,8 @@ data class UiState(
     val listening: Listening = Listening.NOT_STARTED,
     val alert: Alert? = null,
     val notice: Alert? = null,
+    /** A horn heard during a siren: the siren keeps the card, and this stays beside it for a moment. */
+    val alsoHeard: Alert? = null,
     val captions: List<CaptionLine> = emptyList(),
     /** The sentence still fresh enough to call "just now"; older ones stay only in [captions]. */
     val recentCaption: CaptionLine? = null,
@@ -89,6 +91,8 @@ data class UiState(
     val trip: TripSummary = TripSummary(),
     val turnSignal: SignalState = SignalState.OFF,
     val condition: DrivingCondition? = null,
+    /** About to turn: reading can wait, while sirens and horns still come through. */
+    val captionsHeld: Boolean = false,
 ) {
     val parked: Boolean get() = gear == GearPos.P && !uxRestricted
 

@@ -38,8 +38,8 @@ import org.robolectric.annotation.Config
 internal val sirenAlert = Alert(
     kind = AlertKind.SIREN,
     eyebrow = "사이렌 감지 · 뒤쪽에서 접근 중",
-    headline = "구급차가 다가와요",
-    guidance = "오른쪽 차로로 비켜 주세요",
+    headline = "뒤쪽에서 사이렌이 들려요",
+    guidance = "주변을 확인해 주세요",
     rhythm = LightRhythm.SIREN,
     direction = Direction.REAR,
     firedAt = 0,
@@ -65,7 +65,7 @@ class ScreenSmokeTest {
 
         compose.onNodeWithText("birdeye").assertIsDisplayed()
         compose.onNodeWithText("주변 소리를 듣고 있어요").assertIsDisplayed()
-        compose.onNodeWithText("조용해요").assertIsDisplayed()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertIsDisplayed()
     }
 
     @Test
@@ -73,7 +73,7 @@ class ScreenSmokeTest {
         show(UiState(listening = Listening.NO_PERMISSION))
 
         compose.onNodeWithText("주변 소리를 듣고 있어요").assertDoesNotExist()
-        compose.onNodeWithText("조용해요").assertDoesNotExist()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertDoesNotExist()
         compose.onNodeWithText("소리를 듣지 못하고 있어요").assertIsDisplayed()
         compose.onNodeWithText("마이크 권한을 허용해 주세요").assertIsDisplayed()
     }
@@ -106,8 +106,8 @@ class ScreenSmokeTest {
         show(UiState(listening = Listening.DEMO, gear = GearPos.D))
 
         compose.onNodeWithText("시연을 기다리고 있어요").assertDoesNotExist()
-        compose.onNodeWithText("조용해요").assertIsDisplayed()
-        compose.onNodeWithText("사이렌과 경적이 들리면 바로 알려 드릴게요").assertIsDisplayed()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertIsDisplayed()
+        compose.onNodeWithText("소리가 들리면 바로 알려 드릴게요").assertIsDisplayed()
     }
 
     @Test
@@ -115,7 +115,7 @@ class ScreenSmokeTest {
         show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.RAIN))
 
         compose.onNodeWithText(Copy.conditionText(DrivingCondition.RAIN)).assertIsDisplayed()
-        compose.onNodeWithText("조용해요").assertDoesNotExist()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertDoesNotExist()
         compose.onNodeWithText(Copy.MUFFLED_IDLE).assertIsDisplayed()
     }
 
@@ -124,13 +124,13 @@ class ScreenSmokeTest {
         show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, condition = DrivingCondition.FOG))
 
         compose.onNodeWithText(Copy.conditionText(DrivingCondition.FOG)).assertIsDisplayed()
-        compose.onNodeWithText("조용해요").assertIsDisplayed()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertIsDisplayed()
     }
 
     @Test
     fun `the condition stays visible beside an alert and on the talk screen`() {
-        show(UiState(gear = GearPos.D, alert = sirenAlert, condition = DrivingCondition.WIPER))
-        compose.onNodeWithText(Copy.conditionText(DrivingCondition.WIPER)).assertIsDisplayed()
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert, condition = DrivingCondition.WIPER))
+        compose.onNodeWithText("약함 · 와이퍼 소리").assertIsDisplayed()
     }
 
     @Test
@@ -203,7 +203,7 @@ class ScreenSmokeTest {
         show(UiState(gear = GearPos.D, screen = Screen.TALK, captions = listOf(latest), recentCaption = null))
 
         compose.onNodeWithText("조수석 · 방금").assertDoesNotExist()
-        compose.onAllNodesWithText("조수석").assertCountEquals(2) // the card's label and the seat map
+        compose.onAllNodesWithText("조수석").assertCountEquals(1)
     }
 
     @Test
@@ -228,9 +228,9 @@ class ScreenSmokeTest {
         show(UiState(gear = GearPos.D, alert = sirenAlert, captions = listOf(latest), recentCaption = latest))
 
         compose.onNodeWithText("사이렌 감지 · 뒤쪽에서 접근 중").assertIsDisplayed()
-        compose.onNodeWithText("구급차가 다가와요").assertIsDisplayed()
-        compose.onNodeWithText("오른쪽 차로로 비켜 주세요").assertIsDisplayed()
-        compose.onNodeWithText("빠른 3회 점멸 = 긴급차량").assertIsDisplayed()
+        compose.onNodeWithText("뒤쪽에서 사이렌이 들려요").assertIsDisplayed()
+        compose.onNodeWithText("주변을 확인해 주세요").assertIsDisplayed()
+        compose.onNodeWithText("빠른 3회 점멸 = 사이렌").assertIsDisplayed()
         compose.onNodeWithText("구급차 지나가면 천천히 가자").assertIsDisplayed()
     }
 
@@ -238,7 +238,7 @@ class ScreenSmokeTest {
     fun `an alert covers other screens`() {
         show(UiState(gear = GearPos.D, screen = Screen.TALK, alert = sirenAlert, captions = listOf(line("저기"))))
 
-        compose.onNodeWithText("구급차가 다가와요").assertIsDisplayed()
+        compose.onNodeWithText("뒤쪽에서 사이렌이 들려요").assertIsDisplayed()
         compose.onNodeWithText("대화 자막").assertDoesNotExist()
     }
 
@@ -322,12 +322,44 @@ class ScreenSmokeTest {
     }
 
     @Test
-    fun `seat map labels all four seats`() {
+    fun `the talk screen keeps the map beside the conversation`() {
         show(UiState(screen = Screen.TALK, captions = listOf(line("저기", seat = null))))
 
-        listOf("운전석", "조수석", "뒷좌석 왼쪽", "뒷좌석 오른쪽").forEach {
-            compose.onNodeWithText(it).assertIsDisplayed()
-        }
+        compose.onNodeWithText("주변 지도").assertIsDisplayed()
+    }
+
+    @Test
+    fun `captions step aside during a turn and sirens do not`() {
+        show(
+            UiState(
+                gear = GearPos.D,
+                screen = Screen.TALK,
+                captions = listOf(line("저기")),
+                recentCaption = line("저기"),
+                captionsHeld = true,
+            ),
+        )
+
+        compose.onNodeWithText("저기").assertDoesNotExist()
+        compose.onNodeWithText(Copy.CAPTIONS_HELD).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a horn during a siren is shown beside it and the briefing fills the space below`() {
+        val horn = sirenAlert.copy(kind = AlertKind.HORN, headline = "왼쪽에서 경적이 울렸어요", direction = Direction.LEFT)
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert, alsoHeard = horn))
+
+        compose.onNodeWithText("왼쪽에서 경적이 울렸어요", substring = false).assertExists()
+        compose.onNodeWithText("지금 브리핑").assertIsDisplayed()
+        compose.onNodeWithText("최근 소리").assertIsDisplayed()
+        compose.onNodeWithText("주변 지도").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a direction nobody knows is shown as unknown on the map`() {
+        show(UiState(gear = GearPos.D, listening = Listening.ACTIVE, alert = sirenAlert.copy(direction = null)))
+
+        compose.onNodeWithText("사이렌 · 방향 모름").assertIsDisplayed()
     }
 
     @Test
@@ -440,7 +472,7 @@ class ScreenSmokeTest {
             endedAt = 48 * 60_000L,
             distanceMeters = 21_000.0,
             entries = listOf(
-                TripEntry(EntryKind.SIREN, 0, "뒤쪽에서 구급차 사이렌 · 약 20초", "테헤란로"),
+                TripEntry(EntryKind.SIREN, 0, "뒤쪽에서 사이렌 · 약 20초", "테헤란로"),
                 TripEntry(EntryKind.HORN, 60_000, "경적 · 약 2초", "역삼역 사거리"),
                 TripEntry(EntryKind.TALK, 120_000, "조수석: \"저기\"", null),
                 TripEntry(EntryKind.TALK, 180_000, "조수석: \"고마워\"", null),
@@ -451,9 +483,9 @@ class ScreenSmokeTest {
         compose.onNodeWithText("놓친 소리 다시보기").assertIsDisplayed()
         compose.onNodeWithText("정차 중에만 열려요").assertIsDisplayed()
         compose.onNodeWithText("48분 · 21km").assertIsDisplayed()
-        compose.onNodeWithText("긴급차량 사이렌").assertIsDisplayed()
+        compose.onNodeWithText("사이렌").assertIsDisplayed()
         compose.onNodeWithText("2문장").assertIsDisplayed()
-        compose.onNodeWithText("뒤쪽에서 구급차 사이렌 · 약 20초").assertIsDisplayed()
+        compose.onNodeWithText("뒤쪽에서 사이렌 · 약 20초").assertIsDisplayed()
         compose.onNodeWithText("테헤란로").assertIsDisplayed()
     }
 
@@ -493,9 +525,9 @@ class PortraitScreenTest {
         val latest = line("구급차 지나가면 천천히 가자")
         show(UiState(gear = GearPos.D, alert = sirenAlert, captions = listOf(latest), recentCaption = latest))
 
-        compose.onNodeWithText("구급차가 다가와요").assertIsDisplayed()
+        compose.onNodeWithText("뒤쪽에서 사이렌이 들려요").assertIsDisplayed()
         compose.onNodeWithText("구급차 지나가면 천천히 가자").assertIsDisplayed()
-        compose.onNodeWithText("빠른 3회 점멸 = 긴급차량").assertDoesNotExist()
+        compose.onNodeWithText("빠른 3회 점멸 = 사이렌").assertDoesNotExist()
         compose.onNodeWithText("주행").assertDoesNotExist()
     }
 
@@ -519,7 +551,7 @@ class PortraitScreenTest {
     fun `an idle drive still tells the driver the app is listening`() {
         show(UiState(gear = GearPos.D, listening = Listening.ACTIVE))
 
-        compose.onNodeWithText("조용해요").assertIsDisplayed()
+        compose.onNodeWithText("사이렌과 경적은 들리지 않아요").assertIsDisplayed()
     }
 
     @Test

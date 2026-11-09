@@ -21,7 +21,7 @@ class TripLoggerTest {
     private lateinit var db: TripDatabase
     private lateinit var logger: TripLogger
 
-    private val siren = TripEntry(EntryKind.SIREN, 100, "뒤쪽에서 구급차 사이렌 · 약 20초", "테헤란로")
+    private val siren = TripEntry(EntryKind.SIREN, 100, "뒤쪽에서 사이렌 · 약 20초", "테헤란로")
     private val talk = TripEntry(EntryKind.TALK, 200, "조수석: \"저기\"", null)
 
     @Before

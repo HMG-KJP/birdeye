@@ -29,6 +29,7 @@ class UiActions(
     val onOpenSettings: () -> Unit = {},
     val now: () -> Long = System::currentTimeMillis,
     val timeText: (Long) -> String = { SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(it)) },
+    val hourOf: (Long) -> Int = { SimpleDateFormat("H", Locale.KOREA).format(Date(it)).toInt() },
 )
 
 internal fun mainTabs(state: UiState) = listOf(

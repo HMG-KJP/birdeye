@@ -257,6 +257,9 @@ object Tokens {
 
     /** Own values, sized on the default display and scaled by [FormFactor.scale]. */
     const val SIDE_PANE_WIDTH = 440
+
+    /** How much of a wide window the map pane takes, so it fits every display's window. */
+    const val SIDE_PANE_SHARE = 0.42f
     const val ICON_STROKE = 2f
 
     /**

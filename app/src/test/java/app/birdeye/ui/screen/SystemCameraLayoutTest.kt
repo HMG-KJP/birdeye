@@ -61,8 +61,8 @@ class SystemCameraLayoutTest {
     fun `with no signal an alert stays at the top of the window`() {
         show(UiState(gear = GearPos.D, alert = sirenAlert))
 
-        assertTrue(bounds("구급차가 다가와요").top < CAMERA_BOTTOM)
-        compose.onNodeWithText("소리 방향").assertIsDisplayed()
+        assertTrue(bounds("뒤쪽에서 사이렌이 들려요").top < CAMERA_BOTTOM)
+        compose.onNodeWithText("주변 지도").assertIsDisplayed()
     }
 
     @Test
@@ -70,10 +70,10 @@ class SystemCameraLayoutTest {
         val latest = line("구급차 지나가면 천천히 가자")
         show(signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest)))
 
-        assertBelowCamera("구급차가 다가와요")
-        assertBelowCamera("오른쪽 차로로 비켜 주세요")
+        assertBelowCamera("뒤쪽에서 사이렌이 들려요")
+        assertBelowCamera("주변을 확인해 주세요")
         assertBelowCamera("구급차 지나가면 천천히 가자")
-        compose.onNodeWithText("소리 방향").assertDoesNotExist()
+        compose.onNodeWithText("주변 지도").assertDoesNotExist()
     }
 
     @Test
@@ -122,7 +122,7 @@ class SystemCameraLayoutTest {
         val latest = line("구급차 지나가면 천천히 가자")
         show(signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest)), FormFactor.W)
 
-        assertInsideWindow("오른쪽 차로로 비켜 주세요", 810.dp)
+        assertInsideWindow("주변을 확인해 주세요", 810.dp)
         assertInsideWindow("구급차 지나가면 천천히 가자", 810.dp)
     }
 
@@ -132,7 +132,7 @@ class SystemCameraLayoutTest {
         val latest = line("구급차 지나가면 천천히 가자")
         show(signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest)), FormFactor.WF)
 
-        assertInsideWindow("오른쪽 차로로 비켜 주세요", 800.dp)
+        assertInsideWindow("주변을 확인해 주세요", 800.dp)
         assertInsideWindow("구급차 지나가면 천천히 가자", 800.dp)
     }
 
@@ -186,7 +186,7 @@ class PortraitSystemCameraLayoutTest {
             AppRoot(signalOn.copy(alert = sirenAlert, recentCaption = latest, captions = listOf(latest)), UiActions())
         }
 
-        val headline = compose.onNodeWithText("구급차가 다가와요").getBoundsInRoot()
+        val headline = compose.onNodeWithText("뒤쪽에서 사이렌이 들려요").getBoundsInRoot()
         assertTrue("alert starts at ${headline.top}", headline.top >= CAMERA_BOTTOM)
         compose.onNodeWithText("구급차 지나가면 천천히 가자").assertIsDisplayed()
     }
@@ -203,7 +203,7 @@ class PortraitSystemCameraLayoutTest {
             )
         }
 
-        listOf("오른쪽 차로로 비켜 주세요", "구급차 지나가면 천천히 가자").forEach {
+        listOf("주변을 확인해 주세요", "구급차 지나가면 천천히 가자").forEach {
             val box = compose.onNodeWithText(it).getBoundsInRoot()
             assertTrue("$it ends at ${box.bottom}", box.bottom <= 855.dp)
             assertTrue("$it was squeezed to ${box.height}", box.height >= READABLE_LINE)

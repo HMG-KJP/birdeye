@@ -9,7 +9,6 @@ sealed interface AppEvent {
         val direction: Direction?,
         val confidence: Float,
         override val at: Long,
-        val vehicle: EmergencyVehicle? = null,
     ) : AppEvent
 
     /** [seat] is null when the speaker cannot be located. */
@@ -54,7 +53,6 @@ enum class SoundKind { SIREN, HORN }
 enum class NoiseKind { RAIN, THUNDER, WIND }
 enum class TrafficKind { CUT_IN, BLIND_SPOT }
 enum class FogPosition { FRONT, REAR }
-enum class EmergencyVehicle { AMBULANCE, POLICE, FIRE }
 enum class Direction { FRONT, REAR, LEFT, RIGHT }
 enum class Seat { DRIVER, PASSENGER, REAR_LEFT, REAR_RIGHT }
 enum class GearPos { P, R, N, D }

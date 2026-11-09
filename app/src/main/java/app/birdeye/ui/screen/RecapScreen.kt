@@ -46,7 +46,7 @@ private fun ColorTokens.entryColor(kind: EntryKind): Color = when (kind) {
 }
 
 private fun entryLabel(kind: EntryKind): String = when (kind) {
-    EntryKind.SIREN -> "긴급차량 사이렌"
+    EntryKind.SIREN -> "사이렌"
     EntryKind.HORN -> "경적"
     EntryKind.TALK -> "승객 대화"
     EntryKind.OUTSIDE -> "창문 너머 대화"
@@ -126,6 +126,7 @@ fun RecapScreen(state: UiState, onePane: Boolean, actions: UiActions) {
     TwoPaneFrame(
         band = bandStyle(state),
         side = { TripTotals(state.trip, actions.now()) },
+        sideShare = 0.3f,
     ) {
         navigation()
         state.notice?.let { NoticeBar(it) }
