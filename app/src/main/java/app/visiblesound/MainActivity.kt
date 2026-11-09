@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.DisplayMetrics
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +39,8 @@ class MainActivity : ComponentActivity() {
         container.start()
         askForMissingPermissions()
         handleDebugIntent(intent)
+        // The platform's rule for the top level of an app: hide, never terminate.
+        onBackPressedDispatcher.addCallback(this) { moveTaskToBack(true) }
 
         val bus = container.bus
         val clock = container.clock
@@ -51,6 +55,7 @@ class MainActivity : ComponentActivity() {
             }
 
             if (settingsVisible(state, settingsOpen)) {
+                BackHandler { settingsOpen = false }
                 VisibleSoundTheme(formFactor) {
                     SettingsScreen(
                         demoMode = demoMode,
