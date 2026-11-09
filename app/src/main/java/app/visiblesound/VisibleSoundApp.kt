@@ -143,9 +143,13 @@ class AppContainer(private val context: Context) {
     }
 
     fun setDemoMode(on: Boolean) {
+        if (on == settings.demoMode) return
         settings.demoMode = on
+        demoJob?.cancel()
+        if (on) stopRealSources()
+        // What one mode knew about the car means nothing in the other, such as a signal left on.
+        bus.post(AppEvent.Reset(clock()))
         if (on) {
-            stopRealSources()
             bus.post(AppEvent.ListeningChanged(Listening.DEMO, clock()))
         } else {
             startRealSources()

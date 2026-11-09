@@ -115,7 +115,7 @@ fun AlertCard(alert: Alert, modifier: Modifier = Modifier) {
  * a deaf driver can't tell a quiet road from a microphone that stopped working.
  */
 @Composable
-fun IdleCard(listening: Listening, modifier: Modifier = Modifier) {
+fun IdleCard(listening: Listening, scriptStarted: Boolean, modifier: Modifier = Modifier) {
     val colors = LocalColors.current
     val failed = listening == Listening.NO_PERMISSION || listening == Listening.MIC_ERROR
     val (headline, detail) = when (listening) {
@@ -123,7 +123,12 @@ fun IdleCard(listening: Listening, modifier: Modifier = Modifier) {
         Listening.NOT_STARTED -> "잠시만요" to "소리를 들을 준비를 하고 있어요"
         Listening.NO_PERMISSION -> "소리를 듣지 못하고 있어요" to "마이크 권한을 허용해 주세요"
         Listening.MIC_ERROR -> "소리를 듣지 못하고 있어요" to "마이크를 사용할 수 없어요"
-        Listening.DEMO -> "대본을 기다리고 있어요" to "설정에서 대본을 재생할 수 있어요"
+        Listening.DEMO ->
+            if (scriptStarted) {
+                "조용해요" to "대본에 소리가 나오면 바로 알려 드릴게요"
+            } else {
+                "대본을 기다리고 있어요" to "설정에서 대본을 재생할 수 있어요"
+            }
     }
     SoundCard(
         modifier = modifier,

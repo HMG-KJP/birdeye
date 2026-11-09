@@ -42,7 +42,8 @@ fun MainScreen(state: UiState, onePane: Boolean, actions: UiActions) {
     val band = bandStyle(state.copy(screen = Screen.MAIN))
     val cards = @Composable {
         val modifier = Modifier.fillMaxWidth()
-        if (alert != null) AlertCard(alert, modifier) else IdleCard(state.listening, modifier)
+        // A script's first event reports the gear; until then none has played.
+        if (alert != null) AlertCard(alert, modifier) else IdleCard(state.listening, state.gear != null, modifier)
         state.recentCaption?.let { CaptionCard(it, state.parked, fresh = true) }
     }
     if (onePane) {

@@ -94,6 +94,21 @@ class ScreenSmokeTest {
     }
 
     @Test
+    fun `before any script has played, demo mode says it is waiting for one`() {
+        show(UiState(listening = Listening.DEMO, gear = null))
+
+        compose.onNodeWithText("대본을 기다리고 있어요").assertIsDisplayed()
+    }
+
+    @Test
+    fun `once a script is playing, demo mode no longer says it is waiting for one`() {
+        show(UiState(listening = Listening.DEMO, gear = GearPos.D))
+
+        compose.onNodeWithText("대본을 기다리고 있어요").assertDoesNotExist()
+        compose.onNodeWithText("조용해요").assertIsDisplayed()
+    }
+
+    @Test
     fun `a vehicle notice stays visible on the talk screen`() {
         val notice = sirenAlert.copy(
             kind = AlertKind.VEHICLE,
