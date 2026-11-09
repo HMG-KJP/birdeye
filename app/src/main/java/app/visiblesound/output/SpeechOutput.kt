@@ -11,6 +11,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import app.visiblesound.core.AppEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -27,11 +28,13 @@ interface TtsCallbacks {
 interface TtsEngine {
     fun initialize(callbacks: TtsCallbacks)
     fun speak(text: String)
+    fun stop()
     fun release()
 }
 
 interface TtsAudioFocus {
-    fun request()
+    /** False when the car refuses, as it may during a call or an emergency. */
+    fun request(onLost: () -> Unit): Boolean
     fun abandon()
 }
 
@@ -70,7 +73,10 @@ class SpeechOutput(
             if (active) sink(AppEvent.Tts(playing = true, clock()))
         }
 
-        override fun onFinished() = finish()
+        override fun onFinished() {
+            // Stopping the engine after a focus loss reports here too, but the app already knows.
+            if (active) finish()
+        }
     }
 
     fun start() {
@@ -97,8 +103,11 @@ class SpeechOutput(
     }
 
     private fun play(text: String) {
+        if (!focus.request(::onFocusLost)) {
+            sink(AppEvent.Tts(playing = false, clock()))
+            return
+        }
         active = true
-        focus.request()
         watchdog?.cancel()
         watchdog = scope.launch {
             delay(MAX_PLAYBACK_MS)
@@ -112,12 +121,23 @@ class SpeechOutput(
         }
     }
 
-    private fun finish() {
+    /** A call or a voice command took the car's audio: the rest of the sentence would not be heard. */
+    private fun onFocusLost() {
+        if (!active) return
+        try {
+            engine.stop()
+        } catch (e: Exception) {
+            onError(e)
+        }
+        finish(interrupted = true)
+    }
+
+    private fun finish(interrupted: Boolean = false) {
         active = false
         watchdog?.cancel()
         watchdog = null
         focus.abandon()
-        sink(AppEvent.Tts(playing = false, clock()))
+        sink(AppEvent.Tts(playing = false, clock(), interrupted))
     }
 
     companion object {
@@ -166,12 +186,15 @@ class PleosTtsEngine(context: Context) : TtsEngine {
 
     override fun speak(text: String) = tts.speak(text, true)
 
+    override fun stop() = tts.stop()
+
     override fun release() = tts.release()
 }
 
 /** Lowers other audio instead of stopping it while a reply plays. */
 class DuckingAudioFocus(context: Context) : TtsAudioFocus {
     private val audio = context.getSystemService(AudioManager::class.java)
+    private var onLost: () -> Unit = {}
     private val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
         .setAudioAttributes(
             AudioAttributes.Builder()
@@ -179,13 +202,25 @@ class DuckingAudioFocus(context: Context) : TtsAudioFocus {
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .build(),
         )
+        .setOnAudioFocusChangeListener({ change ->
+            Log.i(TAG, "audio focus changed: $change")
+            // Others lower their volume for a duck; only these two mean the reply can't be heard.
+            if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) onLost()
+        }, Handler(Looper.getMainLooper()))
         .build()
 
-    override fun request() {
-        audio.requestAudioFocus(request)
+    override fun request(onLost: () -> Unit): Boolean {
+        this.onLost = onLost
+        val result = audio.requestAudioFocus(request)
+        Log.i(TAG, "audio focus requested: usage=ASSISTANT gain=TRANSIENT_MAY_DUCK result=$result")
+        return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
     }
 
     override fun abandon() {
         audio.abandonAudioFocusRequest(request)
+    }
+
+    private companion object {
+        const val TAG = "VisibleSound"
     }
 }

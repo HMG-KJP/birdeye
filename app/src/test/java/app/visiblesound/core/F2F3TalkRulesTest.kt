@@ -57,6 +57,18 @@ class F2F3TalkRulesTest {
     }
 
     @Test
+    fun `a reply cut off by something else in the car is reported, not confirmed as sent`() {
+        val h = driving()
+            .send(AppEvent.Reply("응, 알겠어", at = 0))
+            .send(AppEvent.Tts(playing = true, at = 100))
+            .send(AppEvent.Tts(playing = false, at = 500, interrupted = true))
+
+        assertEquals(Copy.REPLY_INTERRUPTED, h.ui.toast)
+        assertEquals(null, h.ui.replying)
+        assertTrue(h.ui.captions.isEmpty())
+    }
+
+    @Test
     fun `speech heard while our own voice reply plays is dropped`() {
         val h = driving()
             .send(AppEvent.Tts(playing = true, at = 100))

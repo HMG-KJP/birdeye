@@ -8,6 +8,7 @@ object Copy {
 
     const val REPLY_SENT = "답장을 보냈어요"
     const val REPLY_FAILED = "답장을 말하지 못했어요"
+    const val REPLY_INTERRUPTED = "답장이 중간에 끊겼어요"
     const val HORN_DURING_SIREN = "경적 · 사이렌과 함께 들렸어요"
     const val TURN_SIGNAL = "방향지시등이 켜져 있어요"
     const val TURN_SIGNAL_LOG = "방향지시등이 오래 켜져 있었어요"

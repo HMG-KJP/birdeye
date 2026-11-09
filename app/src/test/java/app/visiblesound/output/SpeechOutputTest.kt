@@ -18,6 +18,7 @@ class SpeechOutputTest {
         val spoken = mutableListOf<String>()
         var released = false
         var failOnSpeak = false
+        var stops = 0
 
         override fun initialize(callbacks: TtsCallbacks) {
             this.callbacks = callbacks
@@ -29,6 +30,10 @@ class SpeechOutputTest {
             spoken += text
         }
 
+        override fun stop() {
+            stops++
+        }
+
         override fun release() {
             released = true
         }
@@ -37,10 +42,14 @@ class SpeechOutputTest {
     private class FakeFocus : TtsAudioFocus {
         var held = false
         var requests = 0
+        var refuse = false
+        var onLost: () -> Unit = {}
 
-        override fun request() {
-            held = true
+        override fun request(onLost: () -> Unit): Boolean {
             requests++
+            this.onLost = onLost
+            held = !refuse
+            return held
         }
 
         override fun abandon() {
@@ -59,6 +68,61 @@ class SpeechOutputTest {
         clock = { testScheduler.currentTime },
         sink = { events += it },
     )
+
+    @Test
+    fun `when the car refuses audio focus nothing is spoken and the reply counts as not said`() = runTest {
+        focus.refuse = true
+        val output = output()
+        output.start()
+
+        output.speak("응, 알겠어")
+
+        assertTrue(engine.spoken.isEmpty())
+        assertEquals(listOf(false), events.map { it.playing })
+        assertEquals(false, events.single().interrupted)
+    }
+
+    @Test
+    fun `losing audio focus stops the voice and tells the app the reply was cut off`() = runTest {
+        val output = output()
+        output.start()
+        output.speak("응, 알겠어")
+        engine.callbacks.onStarted()
+        events.clear()
+
+        focus.onLost()
+
+        assertEquals(1, engine.stops)
+        assertEquals(false, focus.held)
+        assertEquals(true, events.single().interrupted)
+    }
+
+    @Test
+    fun `the engine's own stop report after a focus loss adds nothing`() = runTest {
+        val output = output()
+        output.start()
+        output.speak("응, 알겠어")
+        focus.onLost()
+        events.clear()
+
+        engine.callbacks.onFinished()
+
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun `a focus loss after the reply ended changes nothing`() = runTest {
+        val output = output()
+        output.start()
+        output.speak("응, 알겠어")
+        engine.callbacks.onFinished()
+        events.clear()
+
+        focus.onLost()
+
+        assertEquals(0, engine.stops)
+        assertTrue(events.isEmpty())
+    }
 
     @Test
     fun `speaking asks the engine and takes audio focus so music ducks`() = runTest {
@@ -159,6 +223,7 @@ class SpeechOutputTest {
         val broken = object : TtsEngine {
             override fun initialize(callbacks: TtsCallbacks) = error("service missing")
             override fun speak(text: String) = error("not ready")
+            override fun stop() = Unit
             override fun release() = Unit
         }
         val errors = mutableListOf<Throwable>()
@@ -212,6 +277,7 @@ class SpeechOutputTest {
             }
 
             override fun speak(text: String) = callbacks.onFinished()
+            override fun stop() = Unit
             override fun release() = Unit
         }
         val output = SpeechOutput(immediate, focus, backgroundScope, { testScheduler.currentTime }, { events += it })

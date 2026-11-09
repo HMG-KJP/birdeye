@@ -26,7 +26,8 @@ sealed interface AppEvent {
 
     data class Location(val lat: Double, val lng: Double, val label: String?, override val at: Long) : AppEvent
     data class TurnSignalStale(val side: SignalState, override val at: Long) : AppEvent
-    data class Tts(val playing: Boolean, override val at: Long) : AppEvent
+    /** [interrupted]: something took the car's audio away before the sentence was finished. */
+    data class Tts(val playing: Boolean, override val at: Long, val interrupted: Boolean = false) : AppEvent
     data class UxRestricted(val active: Boolean, override val at: Long) : AppEvent
 
     /** The driver picked a tab. The window screen is entered only by opening the window. */

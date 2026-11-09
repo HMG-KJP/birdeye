@@ -310,6 +310,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         val s = state.copy(ttsEndedAt = event.at).withUi { copy(ttsPlaying = false) }
         return when {
             s.ui.replying == null -> s
+            event.interrupted -> failReply(s, event.at, Copy.REPLY_INTERRUPTED)
             s.replyStarted -> s
                 .copy(replyUntil = null, toastUntil = event.at + config.toastMs)
                 .withUi { copy(replying = null, toast = Copy.REPLY_SENT) }
@@ -317,8 +318,8 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         }
     }
 
-    /** The car never spoke, so the driver must not believe the other person heard the reply. */
-    private fun failReply(state: EngineState, now: Long): EngineState {
+    /** The car did not say it all, and the driver cannot hear that: they must not believe it was heard. */
+    private fun failReply(state: EngineState, now: Long, message: String = Copy.REPLY_FAILED): EngineState {
         val text = state.ui.replying
         return state
             .copy(replyUntil = null, toastUntil = now + config.toastMs)
@@ -327,7 +328,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
                 copy(
                     captions = if (unsaid >= 0) captions.filterIndexed { i, _ -> i != unsaid } else captions,
                     replying = null,
-                    toast = Copy.REPLY_FAILED,
+                    toast = message,
                 )
             }
     }
