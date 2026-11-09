@@ -15,6 +15,9 @@ object Copy {
     const val DOOR_OPEN = "문이 열린 채 주행 중이에요"
     const val DOOR_OPEN_LOG = "문이 열린 채 주행했어요"
     const val VEHICLE_EYEBROW = "차량 소리"
+    const val SWERVE = "핸들을 급하게 꺾었어요"
+    const val SWERVE_GUIDANCE = "주변 차량을 확인하세요"
+    const val SWERVE_LOG = "핸들을 급하게 꺾었어요"
 
     /** Warning lamps come from public Safety and Seat APIs and are named here. */
     fun lampDescription(name: String): String? = when (name) {

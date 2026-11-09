@@ -17,6 +17,10 @@ data class RuleConfig(
     val windowOpenPercent: Int = 20,
     val turnSignalStaleMs: Long = 20_000,
     val steeringStraightDeg: Float = 10f,
+    val swerveDeg: Float = 90f,
+    val swerveWindowMs: Long = 500,
+    val swerveSettleMs: Long = 700,
+    val swerveCooldownMs: Long = 10_000,
     val noticeHoldMs: Long = 8_000,
     val tripEndMs: Long = 120_000,
     val maxCaptions: Int = 20,
@@ -39,6 +43,11 @@ data class EngineState(
     internal val lastOutsideAt: Long? = null,
     internal val recapOpen: Boolean = false,
     internal val steeringDeg: Float = 0f,
+    internal val lastSteerAt: Long? = null,
+    internal val swerveFromDeg: Float = 0f,
+    internal val swerveFromAt: Long = 0,
+    internal val swervePending: Boolean = false,
+    internal val lastSwerveAt: Long? = null,
     internal val signalSince: Long? = null,
     internal val signalNotified: Boolean = false,
     internal val openDoors: Set<DoorArea> = emptySet(),
@@ -61,6 +70,7 @@ data class EngineState(
     sealed interface NoticeSource {
         data object TurnSignal : NoticeSource
         data object Door : NoticeSource
+        data object Swerve : NoticeSource
         data class Lamp(val name: String) : NoticeSource
     }
 }
@@ -76,6 +86,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
         next = applyEvent(next, event, effects)
         next = evaluateTurnSignal(next, event.at, effects)
         next = evaluateDoors(next, event.at, effects)
+        next = evaluateSwerve(next, event.at, effects)
         next = resolveScreen(next)
         return Reduction(next, effects)
     }
@@ -134,7 +145,7 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
                 at = event.at,
                 effects = effects,
             )
-            is AppEvent.Steering -> state.copy(steeringDeg = event.angleDeg)
+            is AppEvent.Steering -> onSteering(state, event)
             is AppEvent.WindowPos ->
                 if (event.area == WindowArea.DRIVER) state.withUi { copy(driverWindowPercent = event.percent) } else state
             is AppEvent.DoorOpen -> state.copy(
@@ -380,6 +391,41 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
             headline = Copy.TURN_SIGNAL,
             guidance = null,
             logText = Copy.TURN_SIGNAL_LOG,
+            at = now,
+            effects = effects,
+        )
+    }
+
+    /** The wheel reports only when it moves, so before this reading it was still at the last one. */
+    private fun onSteering(state: EngineState, event: AppEvent.Steering): EngineState {
+        val moved = state.copy(steeringDeg = event.angleDeg, lastSteerAt = event.at)
+        if (state.lastSteerAt == null) {
+            return moved.copy(swerveFromDeg = event.angleDeg, swerveFromAt = event.at)
+        }
+        val windowOver = event.at - state.swerveFromAt > config.swerveWindowMs
+        val fromDeg = if (windowOver) state.steeringDeg else state.swerveFromDeg
+        val fromAt = if (windowOver) event.at else state.swerveFromAt
+        val swung = abs(event.angleDeg - fromDeg) >= config.swerveDeg
+        val quietPeriodOver = state.lastSwerveAt == null || event.at - state.lastSwerveAt >= config.swerveCooldownMs
+        return moved.copy(
+            swerveFromDeg = if (swung) event.angleDeg else fromDeg,
+            swerveFromAt = if (swung) event.at else fromAt,
+            swervePending = state.swervePending || (swung && quietPeriodOver && state.ui.gear == GearPos.D),
+        )
+    }
+
+    /** Lighting up the cabin in the middle of a swerve would only distract, so this waits for it to end. */
+    private fun evaluateSwerve(state: EngineState, now: Long, effects: MutableList<Effect>): EngineState {
+        val lastSteerAt = state.lastSteerAt
+        if (!state.swervePending || lastSteerAt == null || now - lastSteerAt < config.swerveSettleMs) return state
+        val settled = state.copy(swervePending = false)
+        if (settled.ui.gear != GearPos.D) return settled
+        return fireNotice(
+            settled.copy(lastSwerveAt = now),
+            EngineState.NoticeSource.Swerve,
+            headline = Copy.SWERVE,
+            guidance = Copy.SWERVE_GUIDANCE,
+            logText = Copy.SWERVE_LOG,
             at = now,
             effects = effects,
         )

@@ -39,6 +39,70 @@ class F5VehicleSoundRulesTest {
     }
 
     @Test
+    fun `a sudden swing of the wheel raises a notice once the wheel has settled`() {
+        val h = driving().send(steering(0f, at = 0)).send(steering(-120f, at = 1000))
+
+        assertNull(h.tick(1699).ui.notice)
+        assertEquals(Copy.SWERVE, h.tick(1700).ui.notice?.headline)
+        assertEquals(listOf(LightRhythm.VEHICLE), h.lightEffects())
+        assertEquals(EntryKind.VEHICLE, h.ui.trip.entries.single().kind)
+    }
+
+    @Test
+    fun `the swing notice waits until the driver has finished correcting`() {
+        val h = driving()
+            .send(steering(0f, at = 0))
+            .send(steering(-120f, at = 1000))
+            .send(steering(-60f, at = 1500))
+            .send(steering(0f, at = 2000))
+
+        assertNull(h.tick(2699).ui.notice)
+        assertEquals(Copy.SWERVE, h.tick(2700).ui.notice?.headline)
+    }
+
+    @Test
+    fun `a quick swing made of many small readings still counts`() {
+        val h = driving().send(steering(0f, at = 0))
+        (1..3).forEach { h.send(steering(it * 40f, at = 1000L + it * 100)) }
+
+        assertEquals(Copy.SWERVE, h.tick(2100).ui.notice?.headline)
+    }
+
+    @Test
+    fun `ordinary steering raises nothing`() {
+        val h = driving().send(steering(0f, at = 0))
+        (1..30).forEach { h.send(steering(it * 10f, at = it * 100L)) }
+
+        assertNull(h.tick(10_000).ui.notice)
+    }
+
+    @Test
+    fun `the first reading of the wheel is not a swing`() {
+        val h = driving().send(steering(-200f, at = 0))
+
+        assertNull(h.tick(5_000).ui.notice)
+    }
+
+    @Test
+    fun `a swing only counts in drive`() {
+        val h = EngineHarness().gear(GearPos.R).send(steering(0f, at = 0)).send(steering(300f, at = 100))
+
+        assertNull(h.tick(5_000).ui.notice)
+    }
+
+    @Test
+    fun `a second swing soon after stays quiet, and a later one is reported`() {
+        val h = driving().send(steering(0f, at = 0)).send(steering(120f, at = 100)).tick(800)
+        assertEquals(1, h.lightEffects().size)
+
+        h.send(steering(0f, at = 5_000)).tick(6_000)
+        assertEquals(1, h.lightEffects().size)
+
+        h.send(steering(120f, at = 11_000)).tick(11_700)
+        assertEquals(2, h.lightEffects().size)
+    }
+
+    @Test
     fun `turning the wheel restarts the turn signal timer`() {
         val h = driving()
             .send(signal(SignalState.RIGHT, at = 0))
