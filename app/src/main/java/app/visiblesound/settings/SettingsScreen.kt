@@ -107,7 +107,7 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Label("데모 모드", Tokens.bodyLarge.withWeight(FontWeight.Bold))
-                    Label("차량·음성 입력 대신 시연 대본으로 움직입니다", Tokens.bodySmall, colors.textTertiary)
+                    Label("차량·음성 입력 대신 시연 장면으로 움직입니다", Tokens.bodySmall, colors.textTertiary)
                 }
                 Switch(demoMode)
             }

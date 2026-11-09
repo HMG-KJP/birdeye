@@ -155,6 +155,16 @@ class DesignRulesTest {
     }
 
     @Test
+    fun `driver-facing words never mention the script behind a demo`() {
+        val script = Regex("\"[^\"\n]*대본[^\"\n]*\"")
+        val hits = mainSources().flatMap { file ->
+            script.findAll(file.readText()).map { "${file.name}: ${it.value}" }.toList()
+        }
+
+        assertEquals(emptyList<String>(), hits)
+    }
+
+    @Test
     fun `no emoji anywhere in the app`() {
         val emoji = Regex("[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}]")
         val scripts = File("src/main/assets/demo").listFiles().orEmpty().toList()

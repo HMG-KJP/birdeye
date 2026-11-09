@@ -91,22 +91,23 @@ class ScreenSmokeTest {
         show(UiState(listening = Listening.DEMO))
 
         compose.onNodeWithText("주변 소리를 듣고 있어요").assertDoesNotExist()
-        compose.onNodeWithText("시연 대본으로 움직이고 있어요").assertIsDisplayed()
+        compose.onNodeWithText("시연 중이에요").assertIsDisplayed()
     }
 
     @Test
     fun `before any script has played, demo mode says it is waiting for one`() {
         show(UiState(listening = Listening.DEMO, gear = null))
 
-        compose.onNodeWithText("대본을 기다리고 있어요").assertIsDisplayed()
+        compose.onNodeWithText("시연을 기다리고 있어요").assertIsDisplayed()
     }
 
     @Test
     fun `once a script is playing, demo mode no longer says it is waiting for one`() {
         show(UiState(listening = Listening.DEMO, gear = GearPos.D))
 
-        compose.onNodeWithText("대본을 기다리고 있어요").assertDoesNotExist()
+        compose.onNodeWithText("시연을 기다리고 있어요").assertDoesNotExist()
         compose.onNodeWithText("조용해요").assertIsDisplayed()
+        compose.onNodeWithText("사이렌과 경적이 들리면 바로 알려 드릴게요").assertIsDisplayed()
     }
 
     @Test

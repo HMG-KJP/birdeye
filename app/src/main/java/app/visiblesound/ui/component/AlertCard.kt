@@ -129,9 +129,9 @@ fun IdleCard(listening: Listening, scriptStarted: Boolean, muffled: Boolean, mod
             if (scriptStarted && muffled) {
                 Copy.MUFFLED_IDLE to Copy.MUFFLED_IDLE_DETAIL
             } else if (scriptStarted) {
-                "조용해요" to "대본에 소리가 나오면 바로 알려 드릴게요"
+                "조용해요" to "사이렌과 경적이 들리면 바로 알려 드릴게요"
             } else {
-                "대본을 기다리고 있어요" to "설정에서 대본을 재생할 수 있어요"
+                "시연을 기다리고 있어요" to "설정에서 시연을 시작할 수 있어요"
             }
     }
     SoundCard(

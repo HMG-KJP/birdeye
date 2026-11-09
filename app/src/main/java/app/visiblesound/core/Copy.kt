@@ -120,7 +120,7 @@ object Copy {
         Listening.ACTIVE -> "주변 소리를 듣고 있어요"
         Listening.NOT_STARTED -> "준비하고 있어요"
         Listening.NO_PERMISSION, Listening.MIC_ERROR -> "마이크 꺼짐"
-        Listening.DEMO -> "시연 대본으로 움직이고 있어요"
+        Listening.DEMO -> "시연 중이에요"
     }
 
     /** One line explaining a rhythm, shown next to its dots on the main screen. */
