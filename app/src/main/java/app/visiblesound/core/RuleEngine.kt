@@ -38,7 +38,6 @@ data class EngineState(
     internal val lastSpeechAt: Long? = null,
     internal val lastOutsideAt: Long? = null,
     internal val recapOpen: Boolean = false,
-    internal val signal: SignalState = SignalState.OFF,
     internal val steeringDeg: Float = 0f,
     internal val signalSince: Long? = null,
     internal val signalNotified: Boolean = false,
@@ -356,18 +355,17 @@ class RuleEngine(private val config: RuleConfig = RuleConfig()) {
     // F5 ------------------------------------------------------------------------------------------
 
     private fun onTurnSignal(state: EngineState, event: AppEvent.TurnSignal): EngineState {
-        val changed = event.state != state.signal
+        val changed = event.state != state.ui.turnSignal
         val s = state.copy(
-            signal = event.state,
             signalSince = if (changed) null else state.signalSince,
             signalNotified = if (changed) false else state.signalNotified,
-        )
+        ).withUi { copy(turnSignal = event.state) }
         return if (event.state == SignalState.OFF) s.clearNoticeFrom(EngineState.NoticeSource.TurnSignal) else s
     }
 
     private fun evaluateTurnSignal(state: EngineState, now: Long, effects: MutableList<Effect>): EngineState {
         val staleCondition = state.ui.gear == GearPos.D &&
-            state.signal != SignalState.OFF &&
+            state.ui.turnSignal != SignalState.OFF &&
             abs(state.steeringDeg) < config.steeringStraightDeg
         if (!staleCondition) {
             return state.copy(signalSince = null, signalNotified = false)

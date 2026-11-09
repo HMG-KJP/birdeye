@@ -41,12 +41,14 @@ private fun SoundCard(
 ) {
     val shape = RoundedCornerShape(32.fdp)
     val stackedBelow = 680.fdp
+    // Below the system's camera window the space is short, and the caption must still fit.
+    val verticalPadding = if (LocalSystemCameraHeight.current > 0.dp) 24.fdp else 40.fdp
     BoxWithConstraints(
         modifier
             .background(LocalColors.current.surface, shape)
             .let { if (borderColor != null) it.border(3.dp, borderColor, shape) else it },
     ) {
-        val padded = Modifier.fillMaxWidth().padding(vertical = 40.fdp, horizontal = 44.fdp)
+        val padded = Modifier.fillMaxWidth().padding(vertical = verticalPadding, horizontal = 44.fdp)
         if (maxWidth < stackedBelow) {
             Column(verticalArrangement = Arrangement.spacedBy(20.fdp), modifier = padded) {
                 icon()
@@ -67,11 +69,12 @@ private fun SoundCard(
 
 @Composable
 private fun SoundIcon(paths: List<String>, tint: Color, background: Color, description: String?) {
+    val compact = LocalSystemCameraHeight.current > 0.dp
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(152.fdp).background(background, CircleShape),
+        modifier = Modifier.size(if (compact) 96.fdp else 152.fdp).background(background, CircleShape),
     ) {
-        LineIcon(paths, tint, 80.fdp, strokeWidth = 1.8f, contentDescription = description)
+        LineIcon(paths, tint, if (compact) 52.fdp else 80.fdp, strokeWidth = 1.8f, contentDescription = description)
     }
 }
 

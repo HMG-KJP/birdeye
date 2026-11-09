@@ -78,8 +78,12 @@ data class UiState(
     val uxRestricted: Boolean = false,
     val replies: List<String> = Copy.DEFAULT_REPLIES,
     val trip: TripSummary = TripSummary(),
+    val turnSignal: SignalState = SignalState.OFF,
 ) {
     val parked: Boolean get() = gear == GearPos.P && !uxRestricted
+
+    /** The system opens its blind spot camera over the app with either signal, in any gear. */
+    val systemCameraUp: Boolean get() = turnSignal != SignalState.OFF
 }
 
 sealed interface Effect {

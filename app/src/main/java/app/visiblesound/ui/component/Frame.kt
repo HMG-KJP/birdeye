@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -87,7 +90,16 @@ fun bandStyle(state: UiState): BandStyle? {
     }
 }
 
-/** A wide app window: context on the left, the main content on the right. */
+/** How far down the system's blind spot camera reaches over this window; zero while it is closed. */
+val LocalSystemCameraHeight = staticCompositionLocalOf { 0.dp }
+
+/** Keeps the cards under the camera while the page's tabs stay in view beside it. */
+private val LocalNavigationMinHeight = staticCompositionLocalOf { 0.dp }
+
+/**
+ * A wide app window: context on the left, the main content on the right. The camera opens at the
+ * window's top left, over the left pane, so the main content takes the whole width below it.
+ */
 @Composable
 fun TwoPaneFrame(
     band: BandStyle?,
@@ -95,37 +107,49 @@ fun TwoPaneFrame(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = LocalColors.current
+    val camera = LocalSystemCameraHeight.current
+    val topPadding = 24.fdp
     Box(Modifier.fillMaxSize().background(colors.background)) {
         Row(Modifier.fillMaxSize()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(24.fdp),
-                modifier = Modifier
-                    .width(Tokens.SIDE_PANE_WIDTH.fdp)
-                    .fillMaxHeight()
-                    .padding(vertical = 32.fdp, horizontal = Tokens.windowPadding.tokenDp),
-                content = side,
-            )
-            Spacer(Modifier.width(1.dp).fillMaxHeight().background(colors.dividerStrong))
-            Column(
-                verticalArrangement = Arrangement.spacedBy(24.fdp),
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(vertical = 24.fdp, horizontal = Tokens.windowPadding.tokenDp),
-                content = content,
-            )
+            if (camera == 0.dp) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(24.fdp),
+                    modifier = Modifier
+                        .width(Tokens.SIDE_PANE_WIDTH.fdp)
+                        .fillMaxHeight()
+                        .padding(vertical = 32.fdp, horizontal = Tokens.windowPadding.tokenDp),
+                    content = side,
+                )
+                Spacer(Modifier.width(1.dp).fillMaxHeight().background(colors.dividerStrong))
+            }
+            CompositionLocalProvider(LocalNavigationMinHeight provides (camera - topPadding).coerceAtLeast(0.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(24.fdp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(vertical = topPadding, horizontal = Tokens.windowPadding.tokenDp),
+                    content = content,
+                )
+            }
         }
         if (band != null) TopBand(band)
     }
 }
 
-/** A narrow app window. */
+/** A narrow app window; the camera nearly fills its width, so everything starts below it. */
 @Composable
 fun OnePaneFrame(band: BandStyle?, content: @Composable ColumnScope.() -> Unit) {
+    val camera = LocalSystemCameraHeight.current
     Box(Modifier.fillMaxSize().background(LocalColors.current.background)) {
         Column(
             verticalArrangement = Arrangement.spacedBy(24.fdp),
-            modifier = Modifier.fillMaxSize().padding(vertical = 24.fdp, horizontal = Tokens.windowPadding.tokenDp),
+            modifier = Modifier.fillMaxSize().padding(
+                top = camera + 24.fdp,
+                bottom = 24.fdp,
+                start = Tokens.windowPadding.tokenDp,
+                end = Tokens.windowPadding.tokenDp,
+            ),
             content = content,
         )
         if (band != null) TopBand(band)
@@ -153,24 +177,26 @@ fun PageNavigation(
     suffix: @Composable () -> Unit = {},
 ) {
     val colors = LocalColors.current
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(20.fdp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
+    Box(Modifier.fillMaxWidth().heightIn(min = LocalNavigationMinHeight.current)) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.fdp),
-            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(20.fdp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            LineIcon(icon, iconColor, 40.fdp)
-            Label(title, Tokens.titleSmall, maxLines = 1)
-            if (subtitle != null) {
-                Label(subtitle, Tokens.bodySmall, colors.textTertiary, maxLines = 1)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.fdp),
+                modifier = Modifier.weight(1f),
+            ) {
+                LineIcon(icon, iconColor, 40.fdp)
+                Label(title, Tokens.titleSmall, maxLines = 1)
+                if (subtitle != null) {
+                    Label(subtitle, Tokens.bodySmall, colors.textTertiary, maxLines = 1)
+                }
             }
+            tabs()
+            suffix()
         }
-        tabs()
-        suffix()
     }
 }
 

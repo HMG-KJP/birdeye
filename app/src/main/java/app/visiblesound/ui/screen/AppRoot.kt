@@ -3,13 +3,16 @@ package app.visiblesound.ui.screen
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import app.visiblesound.core.Screen
 import app.visiblesound.core.UiState
 import app.visiblesound.ui.component.BasicButton
 import app.visiblesound.ui.component.LineIcons
+import app.visiblesound.ui.component.LocalSystemCameraHeight
 import app.visiblesound.ui.component.TabItem
 import app.visiblesound.ui.component.Toast
 import app.visiblesound.ui.theme.FormFactor
@@ -56,12 +59,15 @@ fun AppRoot(state: UiState, actions: UiActions, formFactor: FormFactor = FormFac
         val draft = rememberSaveable { mutableStateOf<String?>(null) }
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val onePane = maxHeight > maxWidth
-            when {
-                state.alert != null -> MainScreen(state, onePane, actions)
-                state.screen == Screen.TALK -> TalkScreen(state, onePane, draft, actions)
-                state.screen == Screen.WINDOW -> WindowScreen(state, onePane, actions)
-                state.screen == Screen.RECAP -> RecapScreen(state, onePane, actions)
-                else -> MainScreen(state, onePane, actions)
+            val camera = if (state.systemCameraUp) maxHeight * Tokens.SYSTEM_CAMERA_HEIGHT_RATIO else 0.dp
+            CompositionLocalProvider(LocalSystemCameraHeight provides camera) {
+                when {
+                    state.alert != null -> MainScreen(state, onePane, actions)
+                    state.screen == Screen.TALK -> TalkScreen(state, onePane, draft, actions)
+                    state.screen == Screen.WINDOW -> WindowScreen(state, onePane, actions)
+                    state.screen == Screen.RECAP -> RecapScreen(state, onePane, actions)
+                    else -> MainScreen(state, onePane, actions)
+                }
             }
             state.toast?.let { Toast(it) }
         }

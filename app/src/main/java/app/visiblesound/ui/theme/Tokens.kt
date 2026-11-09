@@ -259,6 +259,12 @@ object Tokens {
     const val SIDE_PANE_WIDTH = 440
     const val ICON_STROKE = 2f
 
+    /**
+     * How much of the app window's height the system's blind spot camera covers. Measured on the
+     * default display only (424 of 1210); a share of the height keeps the cards inside shorter windows.
+     */
+    const val SYSTEM_CAMERA_HEIGHT_RATIO = 0.36f
+
     val font = FontFamily(
         weighted(FontWeight.Normal),
         weighted(FontWeight.Bold),

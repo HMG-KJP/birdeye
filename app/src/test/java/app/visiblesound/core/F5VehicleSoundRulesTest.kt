@@ -1,7 +1,9 @@
 package app.visiblesound.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class F5VehicleSoundRulesTest {
@@ -22,6 +24,18 @@ class F5VehicleSoundRulesTest {
         assertEquals("방향지시등이 켜져 있어요", h.ui.notice?.headline)
         assertEquals(listOf(LightRhythm.VEHICLE), h.lightEffects())
         assertEquals(EntryKind.VEHICLE, h.ui.trip.entries.single().kind)
+    }
+
+    @Test
+    fun `the screen learns of a turn signal in any gear, because the system camera opens with it`() {
+        val h = EngineHarness().send(signal(SignalState.RIGHT, at = 0))
+
+        assertEquals(SignalState.RIGHT, h.ui.turnSignal)
+        assertTrue(h.ui.systemCameraUp)
+
+        h.send(signal(SignalState.OFF, at = 1))
+
+        assertFalse(h.ui.systemCameraUp)
     }
 
     @Test
