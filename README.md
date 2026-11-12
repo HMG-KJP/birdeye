@@ -127,24 +127,41 @@ Pleos Connect UI Design Guide와 공식 Figma를 따릅니다. Connect-S, W, WF 
 
 ## 실행 방법
 
-### 준비
+### APK
+
+[`apk/KJP_birdeye_release.apk`](apk/KJP_birdeye_release.apk) (release 빌드)
+
+### 테스트 환경
+
+| 항목 | 값 |
+| --- | --- |
+| 에뮬레이터 | Pleos Connect Emulator 2.1.0 (Android 14, API 34) |
+| 화면 규격 | Connect-S 17인치, 2560×1440, 160dpi |
+| AVD 설정 | Default boot Cold, RAM 4GB |
+| 필요한 권한 | 마이크, 알림. 설치할 때 `-g`를 붙이면 함께 허용됩니다 |
+
+### 에뮬레이터 준비
 
 1. Android Studio의 SDK Manager > SDK Update Sites에 Pleos Connect 시스템 이미지를 추가합니다.
    - Mac: `https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-arm64-sys-img.xml`
    - Windows, Linux: `https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-sys-img.xml`
 2. Device Manager에서 Pleos Connect v2.1.0 AVD를 만듭니다. Default boot는 Cold, RAM은 4GB로 설정합니다.
 
-### 빌드와 설치
+### 설치와 실행
+
+```bash
+adb install -r -g apk/KJP_birdeye_release.apk
+adb shell am start --user 10 -n app.birdeye/.MainActivity
+```
+
+앱은 사용자 10으로 실행됩니다. 자동차용(Automotive) 기기와 에뮬레이터에서만 설치됩니다.
+
+### 소스에서 빌드
 
 ```bash
 ./gradlew testDebugUnitTest     # 단위 테스트
 ./gradlew assembleRelease       # 서명 키가 없으면 디버그 키로 서명합니다
-adb install -r -g app/build/outputs/apk/release/*.apk
 ```
-
-GitHub Actions의 [Build](https://github.com/HMG-KJP/birdeye/actions/workflows/build.yml) 결과물(`birdeye-apk`)로도 설치할 수 있습니다. 자동차용(Automotive) 기기와 에뮬레이터에서만 설치됩니다.
-
-앱은 사용자 10으로 실행됩니다. 명령줄에서는 `adb shell am start --user 10 -n app.birdeye/.MainActivity`로 엽니다.
 
 ### 데모 모드
 
